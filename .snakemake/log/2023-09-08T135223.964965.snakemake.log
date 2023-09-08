@@ -1,2 +1,0 @@
-SyntaxError in file /Users/katyscott/Documents/RADCURE_radiogenomics_snakemake/Snakefile, line 19:
-Command must be given as string after the shell keyword. (Snakefile, line 19)

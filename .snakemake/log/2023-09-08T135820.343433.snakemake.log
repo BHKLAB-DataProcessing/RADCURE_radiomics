@@ -1,8 +1,0 @@
-Building DAG of jobs...
-MissingInputException in rule makeMAE in file /Users/katyscott/Documents/RADCURE_radiogenomics_snakemake/Snakefile, line 1:
-Missing input files for rule makeMAE:
-    output: data/RADCURE_radiomic_MAE.rds
-    affected files:
-        firstorder_10Percentile
-        patient_ID
-        patient_id

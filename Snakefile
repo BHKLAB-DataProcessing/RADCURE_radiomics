@@ -18,6 +18,8 @@ rule makeMAE:
         clinicalPatIDCol="patient_id",
         radiomicPatIDCol="patient_ID",
         outputFileName="data/RADCURE_radiomic_MAE.rds"
+    container:
+        "docker://jjjermiah/radcure_radiomics:0.1"
     # output:
         # "data/RADCURE_radiomic_MAE.rds"
     script:

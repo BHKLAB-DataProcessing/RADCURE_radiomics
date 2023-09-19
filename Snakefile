@@ -1,3 +1,13 @@
+rule run_medimagetools:
+    input: "/Users/katyscott/Documents/RADCURE/RADCURE"
+    output: directory("data/med-imageout")
+    conda:
+        "envs/medimage.yaml"
+    shell:
+        """
+        autopipeline {input} {output} --update --dry_run
+        """
+
 rule makeMAE:
     input:
         clinical="data/clinical_RADCURE.xlsx",

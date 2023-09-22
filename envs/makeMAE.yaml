@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base=4.3.1
+  - r-essentials=4.3.0
+  - bioconductor-biobase=2.60.0
+  - bioconductor-biocgenerics=0.46.0
+  - bioconductor-mudata=1.4.0
+  - bioconductor-summarizedexperiment=1.30.2
+  - bioconductor-rhdf5=2.44.0
+  - bioconductor-MultiAssayExperiment=1.26.0

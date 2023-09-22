@@ -26,8 +26,10 @@ rule makeMAE:
         outputFileName="data/RADCURE_radiomic_MAE.rds"
     container:
         "docker://jjjermiah/radcure_radiomics:0.1"
+    conda:
+        "envs/makeMAE.yaml"
     output:
-        "data/RADCURE_radiomic_MAE.rds"
+        # "data/RADCURE_radiomic_MAE.rds"
     script:
         "scripts/makeRadiogenomicMAE.R"
 

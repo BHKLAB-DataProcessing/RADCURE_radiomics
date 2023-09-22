@@ -1,3 +1,9 @@
+rule all:
+    input: 
+        directory("data/med-imageout"),
+        "data/RADCURE_radiomic_MAE.rds"
+
+
 rule run_medimagetools:
     input: "/Users/katyscott/Documents/RADCURE/RADCURE"
     output: directory("data/med-imageout")
@@ -20,8 +26,8 @@ rule makeMAE:
         outputFileName="data/RADCURE_radiomic_MAE.rds"
     container:
         "docker://jjjermiah/radcure_radiomics:0.1"
-    # output:
-        # "data/RADCURE_radiomic_MAE.rds"
+    output:
+        "data/RADCURE_radiomic_MAE.rds"
     script:
         "scripts/makeRadiogenomicMAE.R"
 

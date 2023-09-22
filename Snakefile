@@ -1,17 +1,22 @@
 rule all:
     input: 
-        directory("data/med-imageout"),
+        "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.csv",
+        "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.json",
         "data/RADCURE_radiomic_MAE.rds"
 
 
 rule run_medimagetools:
-    input: "/Users/katyscott/Documents/RADCURE/RADCURE"
-    output: directory("data/med-imageout")
+    input: 
+        inputDir="/Users/katyscott/Documents/RADCURE/RADCURE",
+        outputDir="data/med-imageout"
+    output: 
+        "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.csv",
+        "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.json"
     conda:
         "envs/medimage.yaml"
     shell:
         """
-        autopipeline {input} {output} --update --dry_run
+        autopipeline {input.inputDir} {input.outputDir} --dry_run
         """
 
 rule makeMAE:
@@ -29,7 +34,7 @@ rule makeMAE:
     conda:
         "envs/makeMAE.yaml"
     output:
-        # "data/RADCURE_radiomic_MAE.rds"
+        "data/RADCURE_radiomic_MAE.rds"
     script:
         "scripts/makeRadiogenomicMAE.R"
 

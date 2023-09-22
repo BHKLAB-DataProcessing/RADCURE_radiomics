@@ -1,6 +1,6 @@
 meta:
   name: radiomic_snakemake_RADCURE
-  experiment: radiomic_snakemake_RADCURE
+  experiment: snakemake_RADCURE
 
 file_paths:
   top_dir: "/Users/katyscott/Documents/RADCURE/"

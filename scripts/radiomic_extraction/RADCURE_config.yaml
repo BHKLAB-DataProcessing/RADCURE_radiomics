@@ -21,5 +21,6 @@ radiomic_extraction:
   roi_names: 'GTVp.*'
   pyrad_param_file: "./pyradiomics/pyrad_settings/settings_original_allFeatures.yaml"
   negative_control: True
+  parallel: True
 
 quality_checks: False

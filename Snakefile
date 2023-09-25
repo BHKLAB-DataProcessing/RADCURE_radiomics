@@ -2,8 +2,9 @@ rule all:
     input: 
         "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.csv",
         "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.json",
+        "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
+        "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv",
         "data/RADCURE_radiomic_MAE.rds"
-
 
 rule run_medimagetools:
     input: 
@@ -18,6 +19,18 @@ rule run_medimagetools:
         """
         autopipeline {input.inputDir} {input.outputDir} --dry_run
         """
+
+rule extractRadiomicFeatures:
+    input: 
+        "scripts/radiomic_extraction/RADCURE_config.yaml"
+    output:
+        "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
+        "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
+    conda:
+        "envs/radiomicExtraction.yaml"
+    shell:
+        "python3 scripts/radiomic_extraction/radiogenomic_pipeline.py {input}"
+        
 
 rule makeMAE:
     input:

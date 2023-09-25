@@ -35,8 +35,9 @@ rule extractRadiomicFeatures:
 rule makeMAE:
     input:
         clinical="data/clinical_RADCURE.xlsx",
-        radiomic="data/TCIA_RADCUREv1_radiomic_features.csv",
-        pyrad="data/settings_allfilters_allfeatures.yaml"
+        radiomic="data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
+        pyrad="scripts/radiomic_extraction/pyradiomics/pyrad_settings/settings_original_allFeatures.yaml",
+        negativecontrol="data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
     params:
         findFeature="firstorder_10Percentile",
         clinicalPatIDCol="patient_id",

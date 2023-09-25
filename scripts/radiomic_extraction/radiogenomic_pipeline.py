@@ -23,7 +23,7 @@ def main():
     UPDATE = args.update
 
     # HERE FOR DEBUGGING, REMOVE WHEN DONE
-    # CONFIGFILE = 'default_config.yaml'
+    # CONFIGFILE = os.path.join(os.getcwd() + "/scripts/radiomic_extraction/RADCURE_config.yaml")
     # UPDATE = True
 
     # Load in run settings from config 
@@ -38,7 +38,7 @@ def main():
     if config['file_paths.output_dir'] == None:
         outputDir = os.path.join(config['file_paths.top_dir'], "radiogenomic_output/", config["meta.experiment"])
     else:  
-        outputDir = os.path.join(config['file_paths.output_dir'], config["meta.experiment"])
+        outputDir = os.path.join(os.getcwd(), config['file_paths.output_dir'], config["meta.experiment"])
 
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
@@ -94,7 +94,7 @@ def main():
     ### RADIOMIC FEATURE EXTRACTION ###
     # Set up input variables for radiomic feature extraction
     # summaryFilePath = os.path.join(config['file_paths.top_dir'], config['file_paths.img_summary_file'])
-    pyradiomicsParamFilePath = config['radiomic_extraction.pyrad_param_file']
+    pyradiomicsParamFilePath = os.path.join(os.getcwd(), config['radiomic_extraction.pyrad_param_file'])
     idColumnName = config['radiomic_extraction.id_column_label']
     segmentationDirPath = config['file_paths.segmentation_dir']
     segmentationLabel = config['radiomic_extraction.segmentation_label']
@@ -120,7 +120,7 @@ def main():
         else:
             negControlRadFeatures = ctsegNegativeControlRadiomicFeatureExtractionParallel(
                                                     summaryFilePath, dicomSummaryJSON, pyradiomicsParamFilePath, idColumnName,
-                                                    imageDirPath, segmentationDirPath, segmentationLabel, roiNames, parallel)
+                                                    imageDirPath, segmentationDirPath, segmentationLabel, roiNames, ncRadOutputFilePath, parallel)
 
 
 if __name__ == "__main__":

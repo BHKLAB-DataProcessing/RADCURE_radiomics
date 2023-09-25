@@ -120,6 +120,7 @@ loadRadiogenomicDataFile <- function(dataFilePath) {
 makeRadiogenomicMAE <- function(clinicalDataFilePath,
                                 radiomicDataFilePath,
                                 pyradiomicsConfigFile,
+                                negativeControlDataFilePath = NULL,
                                 findFeature = "firstorder_10Percentile",
                                 genomicDataFilePath = NULL,
                                 outputFileName = "outputMAE.rds",
@@ -185,10 +186,30 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
                             primary = radiomicPrimary,
                             colname = radiomicColname)
 
+    tempExpList <- list(radiomics = radiomicSEO)
+
+     # If negative control data is present, create a Summarized Experiment and include it in the MAE
+    if (!is.null(negativeControlDataFilePath)) {
+        negControlDataframe = loadRadiogenomicDataFile(negativeControlDataFilePath)
+
+        selectPatNegControlData <- filter(negControlDataframe, negControlDataframe[[radiomicPatIDCol]] %in% selectPatIDs)
+        negControlSEO <- makeRadiomicSEO(selectPatNegControlData, pyradiomicsConfig = pyradiomicsConfig)
+
+        negControlColname <- colnames(negControlSEO)
+        negControlPrimary <- selectPatIDs
+        negControlAssay <- rep(factor("negative_control_radiomics"), each = length(negControlPrimary))
+        negControlSampleMap <- data.frame(assay = negControlAssay,
+                                          primary = negControlPrimary,
+                                          colname = negControlColname)
+        sampleMap <- rbind(sampleMap, negControlSampleMap)
+
+        tempExpList <- c(tempExpList, negative_control_radiomics = negControlSEO)
+    }
     # Add genomics to experiment list and sample map if present
     if (noGene != FALSE) {
-        experimentList <- ExperimentList(list(radiomics = radiomicSEO,
-                                              rnaseq = genomicSEO))
+        # experimentList <- ExperimentList(list(radiomics = radiomicSEO,
+        #                                       rnaseq = genomicSEO))
+        tempExpList <- c(tempExpList, rnaseq = genomicSEO)
 
         genomicColname <- colnames(genomicSEO)
         genomicPrimary <- selectPatIDs
@@ -197,14 +218,13 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
                                        primary = genomicPrimary,
                                        colname = genomicColname)
         sampleMap <- rbind(sampleMap, genomicSampleMap)
-
-    } else {
-        experimentList <- ExperimentList(list(radiomics = radiomicSEO))
     }
 
-    # preppedMAE <- prepMultiAssay(experimentList, selectPatClinicalData, sampleMap)
+    # Generate Experiment List object for MAE
+    experimentList <- ExperimentList(tempExpList)
 
-    # return(preppedMAE)
+    # Constructor function helper - useful for debugging
+    # preppedMAE <- prepMultiAssay(experimentList, selectPatClinicalData, sampleMap)
 
     # Construct radiogenomic Multi Assay Experiment object
     radiogenomicMAE <- MultiAssayExperiment(experiments = experimentList,
@@ -226,6 +246,7 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
 clinicalDataFilePath <- snakemake@input$clinical
 radiomicDataFilePath <- snakemake@input$radiomic
 pyradiomicsConfigFile <- snakemake@input$pyrad
+negativeControlDataFilePath <- snakemake@input$negativecontrol
 
 findFeature <- snakemake@params$findFeature
 clinicalPatIDCol <- snakemake@params$clinicalPatIDCol
@@ -236,6 +257,7 @@ outputFileName <- snakemake@params$outputFileName
 makeRadiogenomicMAE(clinicalDataFilePath,
                     radiomicDataFilePath,
                     pyradiomicsConfigFile,
+                    negativeControlDataFilePath,
                     findFeature,
                     outputFileName = outputFileName,
                     clinicalPatIDCol = clinicalPatIDCol,

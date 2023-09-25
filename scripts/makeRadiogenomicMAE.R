@@ -130,6 +130,7 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
     radiomicDataframe = loadRadiogenomicDataFile(radiomicDataFilePath)
     genomicDataframe = loadRadiogenomicDataFile(genomicDataFilePath)
 
+    # Check if genomic data is being included in object and set flag accordingly
     if (is.null(genomicDataframe == 0)) {
         noGene = TRUE
         print("No genomic data passed. MAE will only contain radiomic data.")
@@ -137,6 +138,7 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
         noGene = FALSE
     }
 
+    # Read in the radiomic feature extraction config file
     if (file_ext(pyradiomicsConfigFile) != "yaml") {
         stop("Radiomic configuration file must be of type yaml")
     } else {
@@ -149,26 +151,29 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
     # Get intersection of patients in clinical and radiomic data
     selectPatIDs <- unique(intersect(clinicalPatIDs, radiomicPatIDs))
 
+    # If there is genomic data, create Summarized Experiment to add to the MAE
     if (noGene != FALSE) {
         # ASSUMES THAT PATIENT ID IS A COLUMN IN RADIOMICS AND PATIENT IDS ARE COLUMN NAMES IN GENOMICS
         genePatientMatchesIdx <- match(selectPatIDs, names(genomicDataframe))
         genePatientMatchesIdx <- genePatientMatchesIdx[!is.na(genePatientMatchesIdx)]
         # Patient IDs in clinical, genomic and radiomic data
         selectPatIDs <- names(genomicDataframe)[genePatientMatchesIdx]
-
+        # Get genomic data only for patient IDs with clinical and imaging data
         selectPatGenomicData <- genomicDataframe[, c(names(genomicDataframe)[1], selectPatIDs)]
 
-        # make this into a function at some point
+        # TODO: make this into a function at some point
         matSelectPatGenomicData <- data.matrix(selectPatGenomicData[, -(1)])
         rownames(matSelectPatGenomicData) <- selectPatGenomicData[, 1][[1]]
         genomicSEO <- SummarizedExperiment(assays = SimpleList(matSelectPatGenomicData),
                                            colData = selectPatIDs)
     }
 
+    # Prepare clinical data for MAE
     selectPatClinicalData <- filter(clinicalDataframe, clinicalDataframe[[clinicalPatIDCol]] %in% selectPatIDs)
     selectPatClinicalData <- as.data.frame(selectPatClinicalData)
     rownames(selectPatClinicalData) <- selectPatClinicalData[[clinicalPatIDCol]]
 
+    # Make radiomic summarized experiment
     selectPatRadiomicData <- filter(radiomicDataframe, radiomicDataframe[[radiomicPatIDCol]] %in% selectPatIDs)
     radiomicSEO <- makeRadiomicSEO(selectPatRadiomicData, pyradiomicsConfig = pyradiomicsConfig)
 
@@ -180,6 +185,7 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
                             primary = radiomicPrimary,
                             colname = radiomicColname)
 
+    # Add genomics to experiment list and sample map if present
     if (noGene != FALSE) {
         experimentList <- ExperimentList(list(radiomics = radiomicSEO,
                                               rnaseq = genomicSEO))
@@ -200,10 +206,12 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
 
     # return(preppedMAE)
 
+    # Construct radiogenomic Multi Assay Experiment object
     radiogenomicMAE <- MultiAssayExperiment(experiments = experimentList,
                                             colData = selectPatClinicalData,
                                             sampleMap = sampleMap)
 
+    # Save out MAE
     outputExt <- file_ext(outputFileName)
     if (outputExt == "rds") {
         saveRDS(radiogenomicMAE, outputFileName)

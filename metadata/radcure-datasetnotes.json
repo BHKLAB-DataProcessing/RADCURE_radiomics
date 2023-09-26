@@ -1,0 +1,12 @@
+[{
+  "_id": {
+    "$oid": "64fe6da5f80aaa66827eea24"
+  },
+  "citations": [
+    "Michal Kazmierski, Mattea Welch, Sejin Kim, Chris McIntosh, Katrina Rey-McIntyre, Shao Hui Huang, Tirth Patel, Tony Tadic, Michael Milosevic, Fei-Fei Liu, Adam Ryczkowski, Joanna Kazmierska, Zezhong Ye, Deborah Plana, Hugo J.W.L. Aerts, Benjamin H. Kann, Scott V. Bratman, Andrew J. Hope, Benjamin Haibe-Kains; Multi-institutional Prognostic Modeling in Head and Neck Cancer: Evaluating Impact and Generalizability of Deep Learning and Radiomics. Cancer Research Communications 1 June 2023; 3 (6): 1140–1151. <a href='\nhttps://doi.org/10.1158/2767-9764.CRC-22-0152'>https://doi.org/10.1158/2767-9764.CRC-22-0152</a>"
+  ],
+  "name": "RADCURE",
+  "disclaimer": "This radiomics dataset was re-processed and shared by the Haibe-Kains Lab (University Health Network).",
+  "usagePolicy": "Users must abide by the <a href='https://wiki.cancerimagingarchive.net/display/Public/Data+Usage+Policies+and+Restrictions'>TCIA Data Usage Policy and Restrictions.</a>",
+  "__v": 0
+}]

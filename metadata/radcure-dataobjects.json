@@ -1,0 +1,53 @@
+[{
+  "_id": {
+    "$oid": "64fe735af80aaa66827eea2e"
+  },
+  "info": {
+    "date": {
+      "created": {
+        "$date": "2023-09-10T14:46:07.030Z"
+      }
+    },
+    "status": "complete",
+    "private": false,
+    "canonical": true,
+    "numDownload": 1,
+    "createdBy": "BHK Lab",
+    "commitID": "428fed7d972447758eb1ca8dc554388b",
+    "other": {
+      "pipeline": {
+        "url": "https://github.com/BHKLAB-DataProcessing/RADCURE_radiomics.git",
+        "commit_id": "d5089e1544cda6fc5038af0a30408ae4766c02f8"
+      }
+    }
+  },
+  "dataObjType": "RadiomicDataObject",
+  "datasetType": "radiomics",
+  "name": "RADCURE",
+  "dataset": {
+    "$oid": "64fe6ed7f80aaa66827eea26"
+  },
+  "repositories": [
+    {
+      "_id": {
+        "$oid": "62437e22b64ff4388b037a11"
+      },
+      "version": "1.0",
+      "doi": "10.5281/zenodo.8332910",
+      "downloadLink": "https://zenodo.org/record/8332910/files/RADCURE_radiomic_MAE.rds?download=1"
+    }
+  ],
+  "availableDatatypes": [
+    {
+      "_id": {
+        
+      },
+      "name": "radiomics",
+      "genomeType": "RNA"
+    }
+  ],
+  "tools": {
+    "radiomicExtraction": "pyradiomics_3_0_1"
+  },
+  "__v": 0
+}]

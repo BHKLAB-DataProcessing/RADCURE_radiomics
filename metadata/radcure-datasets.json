@@ -1,0 +1,95 @@
+[{
+  "_id": {
+    "$oid": "64fe6ed7f80aaa66827eea26"
+  },
+  "stats": {
+    "cellLines": [],
+    "drugs": [],
+    "tissues": []
+  },
+  "name": "RADCURE",
+  "version": "1.0",
+  "datasetType": "radiomics",
+  "publications": [
+    {
+      "_id": {
+        "$oid": "623ce47ace9106dcacfee8c8"
+      },
+      "citation": "Michal Kazmierski, Mattea Welch, Sejin Kim, Chris McIntosh, Katrina Rey-McIntyre, Shao Hui Huang, Tirth Patel, Tony Tadic, Michael Milosevic, Fei-Fei Liu, Adam Ryczkowski, Joanna Kazmierska, Zezhong Ye, Deborah Plana, Hugo J.W.L. Aerts, Benjamin H. Kann, Scott V. Bratman, Andrew J. Hope, Benjamin Haibe-Kains; Multi-institutional Prognostic Modeling in Head and Neck Cancer: Evaluating Impact and Generalizability of Deep Learning and Radiomics. Cancer Research Communications 1 June 2023; 3 (6): 1140–1151. https://doi.org/10.1158/2767-9764.CRC-22-0152",
+      "link": "https://aacrjournals.org/cancerrescommun/article/3/6/1140/727552/Multi-institutional-Prognostic-Modeling-in-Head"
+    }
+  ],
+  "datasetNote": {
+    "$oid": "64fe6da5f80aaa66827eea24"
+  },
+  "releaseNotes": {
+    "counts": [
+      {
+        "_id": {
+          "$oid": "623ce47ace9106dcacfee8ce"
+        },
+        "current": 2949,
+        "new": 0,
+        "removed": 0,
+        "name": "samples"
+      },
+      {
+        "_id": {
+
+        },
+        "current": 2988,
+        "new": 0,
+        "removed": 0,
+        "name": "primaryTumours"
+      }
+    ]
+  },
+  "__v": 0,
+  "status": {
+    "unavailable": false,
+    "disabled": false,
+    "requestDisabled": false
+  },
+  "availableData": [
+    {
+      "_id": {
+        "$oid": "25fe6ed7f80aaa66827eea26"
+      },
+      "name": "Radiation Therapy Structures",
+      "datatype": "Images and Radiation Therapy Structures, full dataset",
+      "source": "https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE%20Phase%201%20release%20Jun%201%202023.tcia?api=v2",
+      "options": []
+    },
+    {
+      "_id": {
+        "$oid": "25fe6ed7f80aaa66827eea21"
+      },
+      "name": "Images and Radiation Therapy Structures, updated OPC-Radiomics",
+      "datatype": "Digital Imaging",
+      "source": "https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE%20OPC%20only%20Phase%201%20manifest%20Jun%201%202023.tcia?api=v2",
+      "options": []
+    },
+    {
+      "_id": {
+        "$oid": "21fe6ed7f80aaa66827eea25"
+      },
+      "name": "Clinical data",
+      "datatype": "CSV",
+      "source": "https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2",
+      "options": []
+    },
+    {
+      "_id": {
+        "$oid": "54fe6ed7f80aaa66827eea16"
+      },
+      "name": "Patient ID Mapping-RADCURE patient id to OPC-RADIOMICS patient id",
+      "datatype": "CSV",
+      "source": "https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE%20patient%20id%20to%20OPC-Radiomics%20patient%20id%20mapping.csv?api=v2",
+      "options": []
+    }
+  ],
+  "sensitivity": {
+    "source": "https://wiki.cancerimagingarchive.net/plugins/servlet/mobile?contentId=70226325#content/view/70226325",
+    "version": "1.0"
+  }
+}]

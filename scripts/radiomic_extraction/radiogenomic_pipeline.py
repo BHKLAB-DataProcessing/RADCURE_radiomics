@@ -25,7 +25,8 @@ def main():
     # HERE FOR DEBUGGING, REMOVE WHEN DONE
     # CONFIGFILE = os.path.join(os.getcwd() + "/scripts/radiomic_extraction/RADCURE_config.yaml")
     # UPDATE = True
-
+    
+    print("Loading configuration file: ", CONFIGFILE)
     # Load in run settings from config 
     with open(CONFIGFILE, 'r') as f:
         configDict = yaml.load(f, Loader=yaml.FullLoader)
@@ -41,12 +42,14 @@ def main():
         outputDir = os.path.join(os.getcwd(), config['file_paths.output_dir'], config["meta.experiment"])
 
     if not os.path.exists(outputDir):
+        print("Setting up output directory")
         os.makedirs(outputDir)
 
     # Copy the config file to the output dir so settings can be viewed
     copy(CONFIGFILE, outputDir)
 
     # Check for .imgtools dir and dicoms file in the image_dir
+    print("Loading med-imagetools outputs.")
     imageDirPath, ctDirName = os.path.split(config['file_paths.image_dir'])    
     dicomSummaryFile = os.path.join(imageDirPath + '/.imgtools/imgtools_' + ctDirName + '.csv')
     dicomSummaryJSON = os.path.join(imageDirPath + '/.imgtools/imgtools_' + ctDirName + '.json')
@@ -71,6 +74,7 @@ def main():
     # If not, make it
     summaryFilePath = os.path.join(outputDir, config['meta.experiment'] + "_seg_and_ct_dicom_list.csv")
     if not os.path.exists(summaryFilePath) or UPDATE:
+        print("Generating image + segmentation summary file.")
         if config['radiomic_extraction.segmentation_modality'] == 'NIFTI':
             # NIFTI files won't be caught by med-imagetools, need to make a separate list of them
             niftiOut = os.path.join(outputDir, "segmentation_file_summary.csv")
@@ -108,6 +112,7 @@ def main():
         radiomicFeatures = pd.read_csv(radOutputFilePath)
 
     else:
+        print("Extracting radiomic features")
         radiomicFeatures = ctsegRadiomicFeatureExtractionParallel(summaryFilePath, dicomSummaryJSON, pyradiomicsParamFilePath, idColumnName,
                                                                   imageDirPath, segmentationDirPath, segmentationLabel, roiNames, radOutputFilePath, parallel)
     
@@ -118,6 +123,7 @@ def main():
             print("Negative control features have already been extracted. Loading from existing spreadsheet.")
             negControlRadFeatures = pd.read_csv(ncRadOutputFilePath)
         else:
+            print("Extracting negative control radiomic features.")
             negControlRadFeatures = ctsegNegativeControlRadiomicFeatureExtractionParallel(
                                                     summaryFilePath, dicomSummaryJSON, pyradiomicsParamFilePath, idColumnName,
                                                     imageDirPath, segmentationDirPath, segmentationLabel, roiNames, ncRadOutputFilePath, parallel)

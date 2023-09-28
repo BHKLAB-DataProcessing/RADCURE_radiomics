@@ -9,12 +9,7 @@ PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [20,65,99,112]]
 rule all:
     input: 
         GS.remote(GS_PREFIX + "/object_output/RADCURE_radiomic_MAE.rds")
-        # "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_images.csv",
-        # "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_images.json",
-        # "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
-        # "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv",
-        # "data/RADCURE_radiomic_MAE.rds"
-        
+
 rule run_medimagetools:
     input: 
         # inputDir="/Users/katyscott/Documents/RADCURE/RADCURE",
@@ -50,48 +45,21 @@ rule combineRFE:
         all_radiomic_csv = GS.remote(expand(GS_PREFIX + "/radiomic_output/{patient_id}/features/snakemake_RADCURE_radiomic_features.csv",  patient_id=PATIENT_IDS)),
         all_negative_control_csv = GS.remote(expand(GS_PREFIX + "/radiomic_output/{patient_id}/features/snakemake_RADCURE_negative_control_radiomic_features.csv",  patient_id=PATIENT_IDS))
     output:
-        GS.remote(GS_PREFIX + "/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv"),
-        GS.remote(GS_PREFIX + "/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv")
-# rule all:
-#     input: 
-#         GS.remote(GS_PREFIX + "/object_output/RADCURE_radiomic_MAE.rds")
-#         # "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_images.csv",
-#         # "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_images.json",
-#         # "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
-#         # "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv",
-#         # "data/RADCURE_radiomic_MAE.rds"
-        
-
-# rule run_medimagetools:
-#     input: 
-#         # inputDir="/Users/katyscott/Documents/RADCURE/RADCURE",
-#         inputDir=GS.remote(GS_PREFIX + "/images")
-#     output: 
-#         # "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.csv",
-#         # "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.json",
-#         GS.remote(GS_PREFIX + "/.imgtools/imgtools_images.csv"),
-#         GS.remote(GS_PREFIX + "/.imgtools/imgtools_images.json"),
-#         outputDir=directory("data/med-imageout")
-#     conda:
-#         "envs/medimage.yaml"
-#     shell:
-#         """
-#         autopipeline {input.inputDir} {output.outputDir} --dry_run
-#         """
-
-# rule extractRadiomicFeatures:
-#     input: 
-#         config = "scripts/radiomic_extraction/RADCURE_config.yaml", 
-#         imagescsv = GS.remote(GS_PREFIX + "/.imgtools/imgtools_images.csv"),
-#         imagesjson = GS.remote(GS_PREFIX + "/.imgtools/imgtools_images.json"),        
-#     output:
-#         GS.remote(GS_PREFIX + "/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv"),
-#         GS.remote(GS_PREFIX + "/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv")
-#     conda:
-#         "envs/radiomicExtraction.yaml"
-#     shell:
-#         "python3 scripts/radiomic_extraction/radiogenomic_pipeline.py {input.config}"
-       
+        radiomic_features=GS.remote(GS_PREFIX + "/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv"),
+        negative_control_radiomic_features=GS.remote(GS_PREFIX + "/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv")
+    run:
+    # combine all csvs from each input into respective output files, only include the header once 
+        with open(output.radiomic_features, "w") as radiomic_features, open(output.negative_control_radiomic_features, "w") as negative_control_radiomic_features:
+            for i, (radiomic_csv, negative_control_csv) in enumerate(zip(input.all_radiomic_csv, input.all_negative_control_csv)):
+                with open(radiomic_csv) as radiomic_csv, open(negative_control_csv) as negative_control_csv:
+                    if i == 0:
+                        radiomic_features.write(radiomic_csv.read())
+                        negative_control_radiomic_features.write(negative_control_csv.read())
+                    else:
+                        radiomic_csv.readline()
+                        negative_control_csv.readline()
+                        radiomic_features.write(radiomic_csv.read())
+                        negative_control_radiomic_features.write(negative_control_csv.read())
 
 rule makeMAE:
     input:

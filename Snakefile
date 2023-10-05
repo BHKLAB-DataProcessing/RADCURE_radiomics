@@ -5,10 +5,11 @@ GS_PREFIX = "orcestradata/radiomics/radcure_test_sample/images/"
 
 # create patient ids for set range and make sure ID # is 4 digits long
 PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [20,65,99,112]]
+# PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [65]]
 
 rule all:
     input: 
-        GS.remote(GS_PREFIX + "object_output/RADCURE_radiomic_MAE.rds")
+        "results/RADCURE_radiomic_MAE.rds"
         # imagesjson = expand(".imgtools/imgtools_{patient_id}.json", patient_id=PATIENT_IDS),  
         # imagescsv = expand(".imgtools/imgtools_{patient_id}.csv", patient_id=PATIENT_IDS),
 
@@ -21,6 +22,8 @@ rule runMedImageTools:
         outputDir=directory("data/med-imageout/{patient_id}")
     conda:
         "envs/medimage.yaml"
+    log:
+        "logs/medimagetools/{patient_id}.log"
     shell:
         """
         autopipeline {input.inputDir} {output.outputDir} --update --dry_run
@@ -29,24 +32,48 @@ rule runMedImageTools:
 rule extractRadiomicFeatures:
     input: 
         imagescsv = ".imgtools/imgtools_{patient_id}.csv",
-        imagesjson = ".imgtools/imgtools_{patient_id}.json"        
+        imagesjson = ".imgtools/imgtools_{patient_id}.json",
+        image_dir = "{patient_id}",
+        segmentation_dir = "{patient_id}"        
     output:
-        features="radiomic_output/{patient_id}/features/snakemake_RADCURE_radiomic_features.csv",
-        negative_control_features="radiomic_output/{patient_id}/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
+        features="results/radiomic_output/{patient_id}/features/{patient_id}_radiomic_features.csv",
+        negative_control_features="results/radiomic_output/{patient_id}/features/{patient_id}_negative_control_radiomic_features.csv",
+        output_dir=directory("results/radiomic_output/{patient_id}")
     conda:
         "envs/radiomicExtraction.yaml"
     params:
-        config = "scripts/radiomic_extraction/RADCURE_config.yaml", 
+        # config = "scripts/radiomic_extraction/RADCURE_config.yaml",
+        #### OR 
+        name = "snakemake_RADCURE",
+        segmentation_modality = "RTSTRUCT",
+        roi_names = "GTVp*",
+        pyrad_param_file = "scripts/radiomic_extraction/pyradiomics/pyrad_settings/settings_original_allFeatures.yaml",
+        quality_checks = "False"
+    log:
+        "logs/radiomic_extraction/{patient_id}.log"
     shell:
-        "python3 scripts/radiomic_extraction/radiogenomic_pipeline.py {params.config}"
+        # "python3 scripts/radiomic_extraction/radiogenomic_pipeline.py {params.config}"
+        """
+        python scripts/radiomic_extraction/radiogenomic_pipeline.py \
+            --image_dir {input.image_dir} \
+            --segmentation_dir $(dirname {input.segmentation_dir}) \
+            --output_dir $(dirname {output.output_dir}) \
+            --name {params.name} \
+            --experiment {wildcards.patient_id} \
+            --segmentation_modality {params.segmentation_modality} \
+            --roi_names {params.roi_names} \
+            --pyrad_param_file {params.pyrad_param_file} \
+            --quality_checks {params.quality_checks} \
+            --update > {log}
+        """
        
 rule combineRadiomicFeatures:
     input:
-        all_radiomic_csv = expand("radiomic_output/{patient_id}/features/snakemake_RADCURE_radiomic_features.csv",  patient_id=PATIENT_IDS),
-        all_negative_control_csv = expand("radiomic_output/{patient_id}/features/snakemake_RADCURE_negative_control_radiomic_features.csv",  patient_id=PATIENT_IDS)
+        all_radiomic_csv = expand("results/radiomic_output/{patient_id}/features/{patient_id}_radiomic_features.csv", patient_id=PATIENT_IDS),
+        all_negative_control_csv = expand("results/radiomic_output/{patient_id}/features/{patient_id}_negative_control_radiomic_features.csv",  patient_id=PATIENT_IDS)
     output:
-        radiomic_features="radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
-        negative_control_radiomic_features="radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
+        radiomic_features="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
+        negative_control_radiomic_features="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
     run:
     # combine all csvs from each input into respective output files, only include the header once 
         with open(output.radiomic_features, "w") as radiomic_features, open(output.negative_control_radiomic_features, "w") as negative_control_radiomic_features:
@@ -64,18 +91,15 @@ rule combineRadiomicFeatures:
 rule makeMAE:
     input:
         clinical="clinical/clinical_RADCURE.xlsx",
-        radiomic="radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
-        negativecontrol="radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
+        radiomic="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
+        negativecontrol="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
     output:
-        mae = "object_output/RADCURE_radiomic_MAE.rds"
+        outputFileName="results/RADCURE_radiomic_MAE.rds"
     params:
         pyrad="scripts/radiomic_extraction/pyradiomics/pyrad_settings/settings_original_allFeatures.yaml",
         findFeature="firstorder_10Percentile",
         clinicalPatIDCol="patient_id",
         radiomicPatIDCol="patient_ID",
-        outputFileName="data/RADCURE_radiomic_MAE.rds"
-    container:
-        "docker://jjjermiah/radcure_radiomics:0.1"
     conda:
         "envs/makeMAE.yaml"
     script:

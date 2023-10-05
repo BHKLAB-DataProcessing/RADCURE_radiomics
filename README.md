@@ -13,6 +13,28 @@ conda create -n snakemake -c conda-forge -c bioconda snakemake # (optional: sing
 ```
 
 
+## Running using buckets
+
+
+The bucket used is (GCP Project ID = `orcestra-388613`):
+
+```bash
+orcestradata/radiomics/radcure_test_sample/
+```
+
+
+```bash
+snakemake -c8 \
+--use-conda \
+--default-remote-provider=GS \
+--default-remote-prefix=orcestradata/radiomics/radcure_test_sample/images \
+--keep-remote 
+```
+
+
+where the `RADCURE-####` folders are all in `orcestradata/radiomics/radcure_test_sample/images`
+
+
 ### Using Singularity
 
 * containerization technology that allows users to run lightweight, isolated environments for specific use-cases.

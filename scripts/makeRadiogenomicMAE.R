@@ -245,9 +245,9 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
 # -- Read in Snakemake parameters
 clinicalDataFilePath <- snakemake@input$clinical
 radiomicDataFilePath <- snakemake@input$radiomic
-pyradiomicsConfigFile <- snakemake@input$pyrad
 negativeControlDataFilePath <- snakemake@input$negativecontrol
 
+pyradiomicsConfigFile <- snakemake@params$pyrad
 findFeature <- snakemake@params$findFeature
 clinicalPatIDCol <- snakemake@params$clinicalPatIDCol
 radiomicPatIDCol <- snakemake@params$radiomicPatIDCol

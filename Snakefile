@@ -63,11 +63,11 @@ rule combineRadiomicFeatures:
 
 rule makeMAE:
     input:
-        clinical=GS.remote(GS_PREFIX + "clinical/clinical_RADCURE.xlsx"),
-        radiomic=GS.remote(GS_PREFIX + "radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv"),
-        negativecontrol=GS.remote(GS_PREFIX + "radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv")
+        clinical="clinical/clinical_RADCURE.xlsx",
+        radiomic="radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
+        negativecontrol="radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
     output:
-        GS.remote(GS_PREFIX + "object_output/RADCURE_radiomic_MAE.rds")
+        mae = "object_output/RADCURE_radiomic_MAE.rds"
     params:
         pyrad="scripts/radiomic_extraction/pyradiomics/pyrad_settings/settings_original_allFeatures.yaml",
         findFeature="firstorder_10Percentile",

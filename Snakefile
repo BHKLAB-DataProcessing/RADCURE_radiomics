@@ -12,7 +12,7 @@ rule all:
         # imagesjson = expand(".imgtools/imgtools_{patient_id}.json", patient_id=PATIENT_IDS),  
         # imagescsv = expand(".imgtools/imgtools_{patient_id}.csv", patient_id=PATIENT_IDS),
 
-rule run_medimagetools:
+rule runMedImageTools:
     input: 
         inputDir="{patient_id}"
     output: 
@@ -81,9 +81,9 @@ rule makeMAE:
     script:
         "scripts/makeRadiogenomicMAE.R"
 
-rule get_clinical:
+rule getClinicalData:
     output:
-        GS.remote(GS_PREFIX + "clinical/clinical_RADCURE.xlsx")
+        clinical_file = "clinical/clinical_RADCURE.xlsx"
     shell:
         """
         wget -O {output} "https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2"

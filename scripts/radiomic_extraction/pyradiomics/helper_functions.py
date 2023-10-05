@@ -371,7 +371,7 @@ def getAcquisitionFileList(acquisitionInfo:pd.Series,
     patID         = acquisitionInfo["patient_ID"]
     study_CT      = acquisitionInfo["study_CT"]
     series_CT     = acquisitionInfo["series_CT"]
-    subseries_CT  = acquisitionInfo["subseries_CT"]
+    subseries_CT  = str(acquisitionInfo["subseries_CT"])
     instanceCount = acquisitionInfo["instances_CT"]
 
     # Get list of files for this acquisition

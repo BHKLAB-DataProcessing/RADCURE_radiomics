@@ -93,6 +93,8 @@ def ctsegRadiomicFeatureExtractionParallel(summaryFilePath:str,
         sampleRows = pdSummaryFile.loc[pdSummaryFile["series_CT"] == ctSeries]
         patID = sampleRows.iloc[0][idColumnName]
 
+        print("Processing ", patID)
+        
         ctAcquisitionFileList = []
 
         # Check for multiple acquisitions that need to be loaded as a single acquisition

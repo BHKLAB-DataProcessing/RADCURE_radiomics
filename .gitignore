@@ -3,3 +3,5 @@
 data/*.rds
 data*
 *pycache*
+
+orcestradata

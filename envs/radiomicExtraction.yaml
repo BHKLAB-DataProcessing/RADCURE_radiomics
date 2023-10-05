@@ -1,21 +1,29 @@
+name: radiomicExtraction
 channels:
   - defaults
 dependencies:
-  - bzip2=1.0.8
-  - ca-certificates=2023.08.22
-  - libffi=3.4.4
-  - ncurses=6.4
-  - openssl=1.1.1w
+  - numpy=1.21.2
+  # - bzip2=1.0.8
+  # - ca-certificates=2023.08.22
+  # - libffi=3.4.4
+  # - ncurses=6.4
+  # - openssl=1.1.1w
   - pip=23.2.1
   - python=3.10.8
-  - readline=8.2
-  - setuptools=68.0.0
-  - sqlite=3.41.2
-  - tk=8.6.12
-  - wheel=0.38.4
-  - xz=5.4.2
-  - zlib=1.2.13
+  # - readline=8.2
+  # - setuptools=68.0.0
+  # - sqlite=3.41.2
+  # - tk=8.6.12
+  # - wheel=0.38.4
+  # - xz=5.4.2
+  # - zlib=1.2.13
   - pip:
+      - pyradiomics==3.0.1
+      - scalpl==0.4.2
+      - pyparsing==3.1.1
+      - simpleitk==2.3.0
+      - numpy==1.26.0
+      - pydicom==2.3.1
       - attrs==23.1.0
       - click==8.1.7
       - colorama==0.4.6
@@ -43,16 +51,12 @@ dependencies:
       - networkx==3.1
       - nibabel==5.1.0
       - nptyping==2.5.0
-      - numpy==1.26.0
       - packaging==23.1
       - pandas==1.5.3
       - pillow==10.0.1
-      - pydicom==2.3.1
       - pygments==2.16.1
       - pykwalify==1.8.0
       - pynrrd==1.0.0
-      - pyparsing==3.1.1
-      - pyradiomics==3.0.1
       - python-dateutil==2.8.2
       - pytz==2023.3.post1
       - pywavelets==1.4.1
@@ -60,12 +64,10 @@ dependencies:
       - rich==13.5.3
       - ruamel-yaml==0.17.32
       - ruamel-yaml-clib==0.2.7
-      - scalpl==0.4.2
       - scikit-image==0.21.0
       - scikit-learn==1.3.1
       - scipy==1.11.2
       - shellingham==1.5.3
-      - simpleitk==2.3.0
       - six==1.16.0
       - sympy==1.12
       - threadpoolctl==3.2.0

@@ -21,7 +21,7 @@ dependencies:
       - pyradiomics==3.0.1
       - scalpl==0.4.2
       - pyparsing==3.1.1
-      - simpleitk==2.3.0
+      - simpleitk==2.2.0
       - numpy==1.26.0
       - pydicom==2.3.1
       - attrs==23.1.0

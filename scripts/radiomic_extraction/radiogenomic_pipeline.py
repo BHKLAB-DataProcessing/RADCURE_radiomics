@@ -149,7 +149,7 @@ def parse_args():
     parser.add_argument("--radiomic_id_column_label", help="Label of the ID column", default="patient_ID")
     parser.add_argument("--segmentation_label", help="Label of the segmentation", default=1)
     parser.add_argument("--negative_control", help="Whether to use negative control or not", default=True)
-    parser.add_argument("--parallel", help="[True/False] Whether to use parallel processing or not", default=True)
+    parser.add_argument("--parallel", help="[True/False] Whether to use parallel processing or not", default=False)
     parser.add_argument("--segmentation_modality", help="[SEG, RTSTRUCT, NIFTI]  Modality of the segmentation")
     parser.add_argument("--roi_names", help="List of ROI names to extract features from")
     parser.add_argument("--pyrad_param_file", help="Path to pyradiomics parameter file")

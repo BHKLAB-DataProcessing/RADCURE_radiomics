@@ -4,8 +4,8 @@ GS = GSRemoteProvider()
 GS_PREFIX = "orcestradata/radiomics/radcure_test_sample/images/"
 
 # create patient ids for set range and make sure ID # is 4 digits long
-PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [20,65,99,112]]
-# PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [65]]
+# PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [20,65,99,112]]
+PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [20]]
 
 rule all:
     input: 

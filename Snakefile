@@ -1,29 +1,37 @@
 from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
+import pandas as pd
 GS = GSRemoteProvider()
 
-GS_PREFIX = "orcestradata/radiomics/radcure_test_sample/images/"
+GS_PREFIX = "orcestradata/radiomics/"
 
 # create patient ids for set range and make sure ID # is 4 digits long
 # PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [20,65,99,112]]
 PATIENT_IDS = [f"RADCURE-{str(i).zfill(4)}" for i in [20]]
 
+# read in metadata/RADCURE_PatientIDs.csv 
+PATIENT_IDS = pd.read_csv("metadata/RADCURE_PatientIDs.csv")
+# get 'Patient ID` column and convert to list
+PATIENT_IDS = PATIENT_IDS["PatientID"].unique().tolist()
+# print(len(PATIENT_IDS))
+
+
 rule all:
     input: 
-        "results/RADCURE_radiomic_MAE.rds"
-        # imagesjson = expand(".imgtools/imgtools_{patient_id}.json", patient_id=PATIENT_IDS),  
+        # "results/RADCURE_radiomic_MAE.rds"
+        imagesjson = expand("rawdata/RADCURE/.imgtools/imgtools_{patient_id}.json", patient_id=PATIENT_IDS[1:10]),  
         # imagescsv = expand(".imgtools/imgtools_{patient_id}.csv", patient_id=PATIENT_IDS),
 
 rule runMedImageTools:
     input: 
-        inputDir="{patient_id}"
+        inputDir="rawdata/RADCURE/{patient_id}"
     output: 
-        csv_file=".imgtools/imgtools_{patient_id}.csv",
-        json_file=".imgtools/imgtools_{patient_id}.json",
+        csv_file="rawdata/RADCURE/.imgtools/imgtools_{patient_id}.csv",
+        json_file="rawdata/RADCURE/.imgtools/imgtools_{patient_id}.json",
         outputDir=directory("data/med-imageout/{patient_id}")
     conda:
         "envs/medimage.yaml"
-    log:
-        "logs/medimagetools/{patient_id}.log"
+    threads:
+        1
     shell:
         """
         autopipeline {input.inputDir} {output.outputDir} --update --dry_run

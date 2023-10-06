@@ -31,7 +31,7 @@ rule extractRadiomicFeatures:
     conda:
         "envs/radiomicExtraction.yaml"
     shell:
-        "python3 scripts/radiomic_extraction/radiogenomic_pipeline.py {input.config}"
+        "python3 scripts/radiomic_extraction/radiogenomic_pipeline.py {input.config} --update"
         
 
 rule makeMAE:

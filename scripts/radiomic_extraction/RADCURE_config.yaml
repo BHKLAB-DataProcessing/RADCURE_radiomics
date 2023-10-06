@@ -3,9 +3,9 @@ meta:
   experiment: snakemake_RADCURE
 
 file_paths:
-  top_dir: "/Users/katyscott/Documents/RADCURE/"
-  image_dir: "/Users/katyscott/Documents/RADCURE/RADCURE"
-  segmentation_dir: "/Users/katyscott/Documents/RADCURE/"
+  top_dir: "/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/"
+  image_dir: "/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/images"
+  segmentation_dir: "/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/"
   clinical_feature_file: "RADCURE_TCIA_Clinical June 13 2023.xlsx"
   output_dir: "data/radiomic_output/"
 

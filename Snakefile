@@ -1,18 +1,18 @@
 rule all:
     input: 
-        "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.csv",
-        "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.json",
+        # "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.csv",
+        # "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.json",
         "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
         "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv",
-        "data/RADCURE_radiomic_MAE.rds"
+        # "data/RADCURE_radiomic_MAE.rds"
 
 rule run_medimagetools:
     input: 
-        inputDir="/Users/katyscott/Documents/RADCURE/RADCURE",
-        outputDir="data/med-imageout"
+        inputDir="/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/images",
+        outputDir="/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/images",
     output: 
-        "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.csv",
-        "/Users/katyscott/Documents/RADCURE/.imgtools/imgtools_RADCURE.json"
+        "/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/.imgtools/imgtools_images.csv",
+        "/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/.imgtools/imgtools_images.json"
     conda:
         "envs/medimage.yaml"
     shell:
@@ -22,14 +22,16 @@ rule run_medimagetools:
 
 rule extractRadiomicFeatures:
     input: 
-        "scripts/radiomic_extraction/RADCURE_config.yaml"
+        "/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/.imgtools/imgtools_images.csv",
+        "/home/bioinf/bhklab/jermiah/RadioGenomics/pipelines/RADCURE_radiomics/orcestradata/radiomics/radcure_test_sample/.imgtools/imgtools_images.json",
+        config= "scripts/radiomic_extraction/RADCURE_config.yaml"
     output:
         "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
         "data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
     conda:
         "envs/radiomicExtraction.yaml"
     shell:
-        "python3 scripts/radiomic_extraction/radiogenomic_pipeline.py {input}"
+        "python3 scripts/radiomic_extraction/radiogenomic_pipeline.py {input.config}"
         
 
 rule makeMAE:

@@ -60,7 +60,7 @@ makeRadiomicSEO <- function(allRadiomicFeatures,
         # Have to remove filter prefix from feature names so all assay row/col names match
         names(filterRadiomicFeatures) <- str_remove_all(names(filterRadiomicFeatures), filter)
         # Append shape features to front of the radiomic feature dataframe for this filter
-        if (hasShapeFlag == TRUE){
+        if (hasShapeFlag == TRUE) {
             filterRadiomicFeatures <- cbind(shapeFeatures, filterRadiomicFeatures)
         }
 
@@ -110,7 +110,7 @@ loadRadiogenomicDataFile <- function(dataFilePath) {
 #' Also built to build just a radiomic one with no genomic data
 #'
 #' @param clinicalDataFilePath A string of the path to the clinical data file (csv or xlsx)
-#' @param radiomicDataFilePath A string of the path to the radiomic features file (csv or xlsx)
+#' @param radiomicDataFilePath A list of paths to the radiomic features files as strings (csv or xlsx)
 #' @param pyradiomicsConfigFile A string of the path to the configuration file for the PyRadiomics radiomic feature extraction (yaml)
 #' @param findFeature A string, a feature that has been included in the extraction, used to find all the filter types.
 #' @param genomicDataFilePath A string of the path to the genomic feature file (csv or xlsx). If not provided, radiomic MAE constructed.
@@ -120,7 +120,8 @@ loadRadiogenomicDataFile <- function(dataFilePath) {
 makeRadiogenomicMAE <- function(clinicalDataFilePath,
                                 radiomicDataFilePath,
                                 pyradiomicsConfigFile,
-                                negativeControlDataFilePath = NULL,
+                                negativeControlDataFilePaths = NULL,
+                                negativeControlLabels = NULL,
                                 findFeature = "firstorder_10Percentile",
                                 genomicDataFilePath = NULL,
                                 outputFileName = "outputMAE.rds",
@@ -189,21 +190,56 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
     tempExpList <- list(radiomics = radiomicSEO)
 
      # If negative control data is present, create a Summarized Experiment and include it in the MAE
-    if (!is.null(negativeControlDataFilePath)) {
-        negControlDataframe = loadRadiogenomicDataFile(negativeControlDataFilePath)
+    if (!is.null(negativeControlDataFilePaths)) {
+        negSampleCount <- 1
+        for (negativeControlDataPath in negativeControlDataFilePaths){
+            # Load the negative control radiomic data
+            negControlDataframe = loadRadiogenomicDataFile(negativeControlDataPath)
 
-        selectPatNegControlData <- filter(negControlDataframe, negControlDataframe[[radiomicPatIDCol]] %in% selectPatIDs)
-        negControlSEO <- makeRadiomicSEO(selectPatNegControlData, pyradiomicsConfig = pyradiomicsConfig)
+            # Get the selected patient set based on available radiomic and clinical data
+            selectPatNegControlData <- filter(negControlDataframe, negControlDataframe[[radiomicPatIDCol]] %in% selectPatIDs)
 
-        negControlColname <- colnames(negControlSEO)
-        negControlPrimary <- selectPatIDs
-        negControlAssay <- rep(factor("negative_control_radiomics"), each = length(negControlPrimary))
-        negControlSampleMap <- data.frame(assay = negControlAssay,
-                                          primary = negControlPrimary,
-                                          colname = negControlColname)
-        sampleMap <- rbind(sampleMap, negControlSampleMap)
+            # Make summarized experiment for this negative control radiomics set
+            negControlSEO <- makeRadiomicSEO(selectPatNegControlData, pyradiomicsConfig = pyradiomicsConfig)
 
-        tempExpList <- c(tempExpList, negative_control_radiomics = negControlSEO)
+            # Create label for the SEO and sampleMap
+            negControlType = negativeControlLabels[negSampleCount]
+            negControlExpLabel <- paste(negControlType, "negative_control_radiomics", sep = "_")
+
+            # Create sample map for this negative control and join with main sample map for MAE
+            negControlColname <- colnames(negControlSEO)
+            negControlPrimary <- selectPatNegControlData[[radiomicPatIDCol]]
+            negControlAssay <- rep(factor(negControlExpLabel), each = length(negControlPrimary))
+            negControlSampleMap <- data.frame(assay = negControlAssay,
+                                            primary = negControlPrimary,
+                                            colname = negControlColname)
+            sampleMap <- rbind(sampleMap, negControlSampleMap)
+
+            # Create a named vector for this negative control experiment
+            # negControlExp <- c(negControlSEO)
+
+            # Add negative control experiment to overall experiment list for MAE
+            tempExpList <- c(tempExpList, negControlSEO)
+            names(tempExpList)[-1] <- negControlExpLabel
+
+            # Increase negative sample counter for next loop
+            negSampleCount <- negSampleCount + 1
+        }
+
+        # negControlDataframe = loadRadiogenomicDataFile(negativeControlDataFilePath)
+
+        # selectPatNegControlData <- filter(negControlDataframe, negControlDataframe[[radiomicPatIDCol]] %in% selectPatIDs)
+        # negControlSEO <- makeRadiomicSEO(selectPatNegControlData, pyradiomicsConfig = pyradiomicsConfig)
+
+        # negControlColname <- colnames(negControlSEO)
+        # negControlPrimary <- selectPatIDs
+        # negControlAssay <- rep(factor("negative_control_radiomics"), each = length(negControlPrimary))
+        # negControlSampleMap <- data.frame(assay = negControlAssay,
+        #                                   primary = negControlPrimary,
+        #                                   colname = negControlColname)
+        # sampleMap <- rbind(sampleMap, negControlSampleMap)
+
+        # tempExpList <- c(tempExpList, negative_control_radiomics = negControlSEO)
     }
     # Add genomics to experiment list and sample map if present
     if (noGene != FALSE) {
@@ -224,7 +260,7 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
     experimentList <- ExperimentList(tempExpList)
 
     # Constructor function helper - useful for debugging
-    # preppedMAE <- prepMultiAssay(experimentList, selectPatClinicalData, sampleMap)
+    preppedMAE <- prepMultiAssay(experimentList, selectPatClinicalData, sampleMap)
 
     # Construct radiogenomic Multi Assay Experiment object
     radiogenomicMAE <- MultiAssayExperiment(experiments = experimentList,
@@ -243,22 +279,40 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
 }
 
 # -- Read in Snakemake parameters
-clinicalDataFilePath <- snakemake@input$clinical
-radiomicDataFilePath <- snakemake@input$radiomic
-pyradiomicsConfigFile <- snakemake@input$pyrad
-negativeControlDataFilePath <- snakemake@input$negativecontrol
+# clinicalDataFilePath <- snakemake@input$clinical
+# radiomicDataFilePath <- snakemake@input$radiomic
+# pyradiomicsConfigFile <- snakemake@input$pyrad
+# negativeControlDataFilePaths <- c(snakemake@input$negativecontrolshuffle) #, snakemake@input$negativecontrolrandomized)
 
-findFeature <- snakemake@params$findFeature
-clinicalPatIDCol <- snakemake@params$clinicalPatIDCol
-radiomicPatIDCol <- snakemake@params$radiomicPatIDCol
-outputFileName <- snakemake@params$outputFileName
+# # Load list of labels for negative controls
+# negativeControlLabelsString <- snakemake@params$negativecontrollabels
+# negativeControlLabelList <- negativeControlLabelsString # unlist(strsplit(negativeControlLabelsString))
+# negativeControlLabelList <- sapply(negativeControlLabelList, str_squish)
+
+# findFeature <- snakemake@params$findFeature
+# clinicalPatIDCol <- snakemake@params$clinicalPatIDCol
+# radiomicPatIDCol <- snakemake@params$radiomicPatIDCol
+# outputFileName <- snakemake@params$outputFileName
+
+
+clinical="data/RADCURE_TCIA_Clinical_GTV_p.xlsx"
+radiomic="data/radiomic_output/complete_RADCURE/TCIA_RADCUREv1_complete_radiomic_features.csv"
+pyrad="scripts/radiomic_extraction/pyradiomics/pyrad_settings/uhn-radcure-challenge_params.yaml"
+negativecontrolshuffle="data/radiomic_output/complete_RADCURE/TCIA_RADCUREv1_complete_negative_control_radiomic_features.csv"
+#negativecontrolrandomized="data/radiomic_output/complete_RADCURE/TCIA_RADCUREv1_complete_randomized_voxel_radiomic_features.csv"
+negativecontrollabels="shuffled" #, randomized"
+findFeature="firstorder_10Percentile"
+clinicalPatIDCol="patient_id"
+radiomicPatIDCol="patient_ID"
+outputFileName="data/RADCURE_complete_radiomic_MAE.rds"
 
 # Call function
-makeRadiogenomicMAE(clinicalDataFilePath,
-                    radiomicDataFilePath,
-                    pyradiomicsConfigFile,
-                    negativeControlDataFilePath,
-                    findFeature,
+makeRadiogenomicMAE(clinicalDataFilePath = clinical,
+                    radiomicDataFilePath = radiomic,
+                    pyradiomicsConfigFile = pyrad,
+                    negativeControlDataFilePaths = negativecontrolshuffle,
+                    negativeControlLabels = negativecontrollabels,
+                    findFeature = findFeature,
                     outputFileName = outputFileName,
                     clinicalPatIDCol = clinicalPatIDCol,
                     radiomicPatIDCol = radiomicPatIDCol)

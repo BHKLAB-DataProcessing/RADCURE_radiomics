@@ -37,7 +37,7 @@ makeRadiomicSEO <- function(allRadiomicFeatures,
     } else {
         hasShapeFlag <- TRUE
         shapeFeatureNames <- names(shapeFeatures)
-        # names(shapeFeatures) <- str_remove_all(shapeFeatureNames, "original_")
+        names(shapeFeatures) <- str_remove_all(shapeFeatureNames, "original_")
     }
 
     # Drop shape features from total feature list
@@ -304,7 +304,7 @@ negativecontrollabels="shuffled" #, randomized"
 findFeature="firstorder_10Percentile"
 clinicalPatIDCol="patient_id"
 radiomicPatIDCol="patient_ID"
-outputFileName="data/RADCURE_complete_radiomic_MAE.rds"
+outputFileName="data/RADCURE_complete_radiomic_MAE_v2.rds"
 
 # Call function
 makeRadiogenomicMAE(clinicalDataFilePath = clinical,

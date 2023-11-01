@@ -34,11 +34,13 @@ rule extractRadiomicFeatures:
 
 rule makeMAE:
     input:
-        clinical="data/clinical_RADCURE.xlsx",
-        radiomic="data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
-        pyrad="scripts/radiomic_extraction/pyradiomics/pyrad_settings/settings_original_allFeatures.yaml",
-        negativecontrol="data/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
+        clinical="data/RADCURE_TCIA_Clinical_GTV_p.xlsx",
+        radiomic="data/radiomic_output/complete_RADCURE/TCIA_RADCUREv1_complete_radiomic_features.csv",
+        pyrad="scripts/radiomic_extraction/pyradiomics/pyrad_settings/uhn-radcure-challenge_params.yaml",
+        negativecontrolshuffle="data/radiomic_output/complete_RADCURE/TCIA_RADCUREv1_complete_negative_control_radiomic_features.csv",
+        #negativecontrolrandomized="data/radiomic_output/complete_RADCURE/TCIA_RADCUREv1_complete_randomized_voxel_radiomic_features.csv"
     params:
+        negativecontrollabels="shuffled", #, randomized"
         findFeature="firstorder_10Percentile",
         clinicalPatIDCol="patient_id",
         radiomicPatIDCol="patient_ID",

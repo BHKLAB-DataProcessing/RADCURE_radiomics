@@ -371,7 +371,7 @@ def getAcquisitionFileList(acquisitionInfo:pd.Series,
     patID         = acquisitionInfo["patient_ID"]
     study_CT      = acquisitionInfo["study_CT"]
     series_CT     = acquisitionInfo["series_CT"]
-    subseries_CT  = acquisitionInfo["subseries_CT"]
+    subseries_CT  = str(acquisitionInfo["subseries_CT"])
     instanceCount = acquisitionInfo["instances_CT"]
 
     # Get list of files for this acquisition
@@ -382,7 +382,9 @@ def getAcquisitionFileList(acquisitionInfo:pd.Series,
         raise ValueError("Acquisition matching failed.")
 
     # Combine the file list with the absolute path
-    acquisitionFileList = [os.path.join(imageDirPath, imageFile) for imageFile in acquisitionFileDict.values() ]
+    acquisitionFileList = [os.path.join(imageDirPath, imageFile) for imageFile in acquisitionFileDict.values()]
+    # Have to reverse sort the list and convert tuple to match expected input of simpleITK loader function
+    acquisitionFileList = sorted(tuple(acquisitionFileList), reverse=True)
     return acquisitionFileList
 
 

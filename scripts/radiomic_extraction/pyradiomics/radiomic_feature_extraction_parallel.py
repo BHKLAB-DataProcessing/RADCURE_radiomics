@@ -97,7 +97,7 @@ def ctsegRadiomicFeatureExtractionParallel(summaryFilePath:str,
         
         # Load CT by passing in specific series to find in a directory
         ctFolderPath = os.path.join(imageDirPath, sampleRows.iloc[0]['folder_CT'])
-        ctImage = read_dicom_series(path = ctFolderPath, series = ctSeries)
+        ctImage = read_dicom_series(path = ctFolderPath, series_id = ctSeries)
 
         # Get list of segmentations to iterate over
         segSeriesIDs = sampleRows['series_seg'].unique()

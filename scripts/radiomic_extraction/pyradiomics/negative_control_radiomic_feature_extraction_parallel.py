@@ -100,7 +100,7 @@ def ctsegNegativeControlRadiomicFeatureExtractionParallel(summaryFilePath:str,
         
         # Load CT by passing in specific series to find in a directory
         ctFolderPath = os.path.join(imageDirPath, sampleRows.iloc[0]['folder_CT'])
-        ctImage = read_dicom_series(path = ctFolderPath, series = ctSeries)
+        ctImage = read_dicom_series(path = ctFolderPath, series_id = ctSeries)
 
         # Make negative control version of ctImage (random shuffled pixels, same size)
         ncCTImage = shuffleImage(ctImage)

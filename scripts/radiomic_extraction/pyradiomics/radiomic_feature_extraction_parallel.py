@@ -95,31 +95,9 @@ def ctsegRadiomicFeatureExtractionParallel(summaryFilePath:str,
 
         print("Processing ", patID)
         
-        ctAcquisitionFileList = []
-
-        # Check for multiple acquisitions that need to be loaded as a single acquisition
-        # NSCLC_Radiogenomics R01-041 falls under this
-        if (sampleRows.duplicated(subset=['series_seg'], keep=False).all()) and (not sampleRows.duplicated(subset=['subseries_CT', 'instance_uid_CT', 'instances_CT']).all()):   
-            print("Multiple acquisitions found with same IDs for patient", patID, " - will be loaded together")
-            # Get complete list of files for CT to load
-            for acquisitionIndex in range(0,len(sampleRows)):
-                acquisitionRow = sampleRows.iloc[acquisitionIndex]
-                tempAcquisitionFileList = getAcquisitionFileList(acquisitionRow, summaryJSON, imageDirPath)
-                ctAcquisitionFileList.extend(tempAcquisitionFileList)
-            # Remove the extra acquisition
-            sampleRows.drop_duplicates(subset=['series_CT', 'series_seg', 'study_CT', 'study_description_CT', 
-                                            'series_description_CT', 'reference_frame_CT', 'orientation_CT'], inplace=True)
-        else:
-            # Check that there aren't entire duplicated rows
-            if sampleRows.duplicated().all():
-                print("Duplicated series and segmentation combo. Will only process once.")
-                sampleRows.drop_duplicates(inplace=True)
-
-            # Get file list for CT acquisition
-            ctAcquisitionFileList = getAcquisitionFileList(sampleRows.iloc[0], summaryJSON, imageDirPath)
-        
-        # Load CT
-        ctImage = read_dicom_series(path = imageDirPath, file_names = ctAcquisitionFileList)
+        # Load CT by passing in specific series to find in a directory
+        ctFolderPath = os.path.join(imageDirPath, sampleRows.iloc[0]['folder_CT'])
+        ctImage = read_dicom_series(path = ctFolderPath, series = ctSeries)
 
         # Get list of segmentations to iterate over
         segSeriesIDs = sampleRows['series_seg'].unique()
@@ -137,7 +115,7 @@ def ctsegRadiomicFeatureExtractionParallel(summaryFilePath:str,
             # Get path to DICOM folder for CT and SEG
             # Full path is not included in summary file, need to add base of path
             # Need ctFolderPath for loading RTSTRUCTS
-            ctFolderPath = os.path.join(imageDirPath, segRow.iloc[0]['folder_CT'])
+            # ctFolderPath = os.path.join(imageDirPath, segRow.iloc[0]['folder_CT'])
             segFilePath = os.path.join(segmentationDirPath, segRow.iloc[0]['file_path_seg'])
 
             # Get dictionary of ROI sitk Images for this segmentation file

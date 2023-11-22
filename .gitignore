@@ -2,6 +2,11 @@
 .snakemake*
 data/*.rds
 data*
+rawdata/*
 *pycache*
-
+clinical/
+logs/
+results/
+scripts/dicomsort.py
+trash/
 orcestradata

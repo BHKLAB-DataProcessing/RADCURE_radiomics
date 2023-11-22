@@ -115,8 +115,11 @@ def ctsegNegativeControlRadiomicFeatureExtractionParallel(summaryFilePath:str,
         for segCount, segSeries in enumerate(segSeriesIDs):
             segRow = sampleRows.loc[sampleRows['series_seg'] == segSeries]
 
+            # Check that a single segmentation file is being processed
             if len(segRow) > 1:
-                raise RuntimeError("Some kind of duplication of segmentation and CT matches not being caught. Check seg_and_ct_dicom_list in radiogenomic_output.")
+                # Check that if there are multiple rows that it's not due to a CT with subseries (this is fine, the whole series is loaded)
+                if not segRow.duplicated(subset=['series_CT'], keep=False).all():
+                    raise RuntimeError("Some kind of duplication of segmentation and CT matches not being caught. Check seg_and_ct_dicom_list in radiogenomic_output.")
             
             # Get path to DICOM folder for CT and SEG
             # Full path is not included in summary file, need to add base of path

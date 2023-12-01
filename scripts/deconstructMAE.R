@@ -57,15 +57,18 @@ makeExperimentDataframe <- function(experimentSEO, assayNameList = NULL) {
     dfpatientMeta <- as.data.frame(patientMeta)
     finalDf <- cbind(dfpatientMeta, t_completeExpDataframe)
 
+    # Remove the pat_ID+GTVname as the rownames
+    row.names(finalDf) <- NULL
+
     return(finalDf)
 }
 
 # MAE file path
-maeFilePath <- "data/RADCURE_complete_radiomic_MAE_v2.rds"
+maeFilePath <- "/Users/katyscott/Documents/RADCURE/GCP_debugging/test1/RADCURE_radiomic_MAE.rds"
 # load MAE .rds file
 radiomicMAE <- readRDS(maeFilePath)
 # extract output dir name from MAE location to save csvs in the same place
-outDir <- basename(dirname(maeFilePath))
+outDir <- dirname(maeFilePath)
 # study name for output file creation
 studyName <- paste(outDir, "RADCURE_complete", sep = "/")
 # Get list of Experiment names
@@ -79,5 +82,5 @@ for (experimentName in experimentNameList) {
 
     # save out as csv or xlsx
     outputFileName <- paste(studyName, experimentName, "features.csv", sep = "_")
-    write.csv(experimentDF, outputFileName)
+    write.csv(experimentDF, outputFileName, row.names = FALSE)
 }

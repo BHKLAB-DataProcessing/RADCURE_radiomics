@@ -1,31 +1,34 @@
 from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
 import pandas as pd
-GS = GSRemoteProvider()
 
-GS_PREFIX = "orcestradata/"
+# GS_PREFIX = "radiomics-projects/RADCURE/"
 
-# ids, = glob_wildcards("rawdata/radiomics/RADCURE/{patient_id}")
+# patients, = GS.glob_wildcards(GS_PREFIX + "rawdata/{patient_id}/")
+# patients = list(set([patient.split("/")[0] for patient in patients]))
 
 # # read in metadata/RADCURE_PatientIDs.csv 
 PATIENT_IDS = pd.read_csv("metadata/RADCURE_PatientIDs.csv")
 # # get 'Patient ID` column and convert to list
 PATIENT_IDS = PATIENT_IDS["PatientID"].unique().tolist()
 # PATIENT_IDS = "RADCURE-0020"
+# patients, = GS.glob_wildcards(GS_PREFIX + "/rawdata/{patient_id}/")
+# PATIENT_IDS = ['RADCURE-1416', 'RADCURE-0441', 'RADCURE-0731', 'RADCURE-1279', 'RADCURE-0402', 'RADCURE-1360', 'RADCURE-0816', 'RADCURE-1321', 'RADCURE-0040', 'RADCURE-0735']
+
+# PATIENT_IDS = PATIENT_IDS[:1]
+# print(PATIENT_IDS)
+
 rule all:
     input: 
         # "results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
         "results/RADCURE_radiomic_MAE.rds"
-        # imagesjson = expand("rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.json", patient_id=PATIENT_IDS[1:10]),  
-        # imagescsv = expand(".imgtools/imgtools_{patient_id}.csv", patient_id=PATIENT_IDS),
-
 
 rule runMedImageTools:
     input: 
-        inputDir="rawdata/radiomics/RADCURE/{patient_id}"
+        inputDir="rawdata/{patient_id}"
     output: 
-        csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
-        json_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.json",
-        outputDir=directory("data/med-imageout/{patient_id}")
+        csv_file="rawdata/.imgtools/imgtools_{patient_id}.csv",
+        json_file="rawdata/.imgtools/imgtools_{patient_id}.json",
+        outputDir=directory("rawdata/med-imageout_empty/{patient_id}")
     conda:
         "envs/medimage.yaml"
     retries:
@@ -39,10 +42,10 @@ rule runMedImageTools:
 
 rule extractRadiomicFeatures:
     input: 
-        imagescsv = "rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
-        imagesjson = "rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.json",
-        image_dir = "rawdata/radiomics/RADCURE/{patient_id}",
-        segmentation_dir = "rawdata/radiomics/RADCURE/{patient_id}"      
+        imagescsv = "rawdata/.imgtools/imgtools_{patient_id}.csv",
+        imagesjson = "rawdata/.imgtools/imgtools_{patient_id}.json",
+        image_dir = "rawdata/{patient_id}",
+        segmentation_dir = "rawdata/{patient_id}"      
     output:
         features="results/radiomic_output/{patient_id}/features/{patient_id}_radiomic_features.csv",
         negative_control_features="results/radiomic_output/{patient_id}/features/{patient_id}_negative_control_radiomic_features.csv",
@@ -99,7 +102,7 @@ rule combineRadiomicFeatures:
 
 rule makeMAE:
     input:
-        clinical="clinical/clinical_RADCURE.xlsx",
+        clinical="rawdata/clinical/clinical_RADCURE.xlsx",
         radiomic="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
         negativecontrol="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
     output:
@@ -116,7 +119,7 @@ rule makeMAE:
 
 rule getClinicalData:
     output:
-        clinical_file = "clinical/clinical_RADCURE.xlsx"
+        clinical_file = "rawdata/clinical/clinical_RADCURE.xlsx"
     shell:
         """
         wget -O {output} "https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2"

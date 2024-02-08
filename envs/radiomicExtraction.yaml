@@ -17,11 +17,10 @@ dependencies:
   - xz=5.4.2
   - zlib=1.2.13
   - pip:
-      - pyradiomics==3.0.1
+      - numpy==1.26.0
       - scalpl==0.4.2
       - pyparsing==3.1.1
       - simpleitk==2.2.0
-      - numpy==1.26.0
       - pydicom==2.3.1
       - attrs==23.1.0
       - click==8.1.7
@@ -78,3 +77,4 @@ dependencies:
       - typing-extensions==4.8.0
       - tzdata==2023.3
       - wrapt==1.15.0
+      - pyradiomics==3.0.1

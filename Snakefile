@@ -11,7 +11,9 @@ import pandas as pd
 # # get 'Patient ID` column and convert to list
 # PATIENT_IDS = PATIENT_IDS["PatientID"].unique().tolist()
 PATIENT_IDS = "RADCURE-0314", "RADCURE-0317"
-NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi"
+NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
+              "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
+              "randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
 PYRAD_SETTING = "scripts/radiomic_extraction/pyradiomics/pyrad_settings/uhn-radcure-challenge_params.yaml"
 
 rule all:
@@ -19,8 +21,8 @@ rule all:
         radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
         radFeatures_negcontrols = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS),
         combined_radiomic_features = "results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
-        combined_negative_control_features = expand("results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv", negative_control=NEG_CONTROLS)
-
+        combined_negative_control_features = expand("results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv", negative_control=NEG_CONTROLS),
+        maeObject = "results/RADCURE_readii_radiomic_MAE.rds"
 
 rule runMedImageTools:
     input: 

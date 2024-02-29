@@ -14,7 +14,7 @@ PATIENT_IDS = "RADCURE-0314", "RADCURE-0317"
 NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
               "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
               "randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
-PYRAD_SETTING = "scripts/radiomic_extraction/pyradiomics/pyrad_settings/uhn-radcure-challenge_params.yaml"
+PYRAD_SETTING = "scripts/pyrad_settings/uhn-radcure-challenge_params.yaml"
 
 rule all:
     input: 

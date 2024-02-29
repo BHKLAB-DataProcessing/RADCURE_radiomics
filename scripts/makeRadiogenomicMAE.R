@@ -256,7 +256,7 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
 
 # -- Read in Snakemake parameters
 clinicalDataFilePath <- snakemake@input$clinical
-radiomicDataDirPath <- snakemake@input$radiomic
+radiomicDataDirPath <- snakemake@input$radiomicDir
 # negativeControlDataFilePath <- snakemake@input$negativecontrol
 
 outputFileName <- snakemake@output$outputFileName

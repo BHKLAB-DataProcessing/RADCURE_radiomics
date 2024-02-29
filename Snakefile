@@ -12,6 +12,7 @@ import pandas as pd
 # PATIENT_IDS = PATIENT_IDS["PatientID"].unique().tolist()
 PATIENT_IDS = "RADCURE-0314", "RADCURE-0317"
 NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi"
+PYRAD_SETTING = "scripts/radiomic_extraction/pyradiomics/pyrad_settings/uhn-radcure-challenge_params.yaml"
 
 rule all:
     input: 
@@ -51,7 +52,7 @@ rule runREADII:
 
     params:
         roi_names="GTVp*",
-        pyrad_setting="scripts/radiomic_extraction/pyradiomics/pyrad_settings/uhn-radcure-challenge_params.yaml",
+        pyrad_setting=PYRAD_SETTING,
     conda:
         "envs/readii.yaml"
     retries:
@@ -77,7 +78,7 @@ rule runREADIINegativeControl:
         radFeatures_negcontrols = "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv"
     params:
         roi_names="GTVp*",
-        pyrad_setting="scripts/radiomic_extraction/pyradiomics/pyrad_settings/uhn-radcure-challenge_params.yaml",
+        pyrad_setting=PYRAD_SETTING,
         negative_controls = "{negative_control}"
     conda:
         "envs/readii.yaml"
@@ -135,13 +136,12 @@ rule combineNegativeControlFeatures:
 
 rule makeMAE:
     input:
-        clinical="clinical/clinical_RADCURE.xlsx",
-        radiomic="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_radiomic_features.csv",
-        negativecontrol="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
+        clinical="rawdata/clinical/clinical_RADCURE.xlsx",
+        radiomic="results/snakemake_RADCURE/features",
     output:
-        outputFileName="results/RADCURE_radiomic_MAE.rds"
+        outputFileName="results/RADCURE_readii_radiomic_MAE.rds"
     params:
-        pyrad="scripts/radiomic_extraction/pyradiomics/pyrad_settings/settings_original_allFeatures.yaml",
+        pyrad=PYRAD_SETTING,
         findFeature="firstorder_10Percentile",
         clinicalPatIDCol="patient_id",
         radiomicPatIDCol="patient_ID",
@@ -150,9 +150,10 @@ rule makeMAE:
     script:
         "scripts/makeRadiogenomicMAE.R"
 
+
 rule getClinicalData:
     output:
-        clinical_file = "clinical/clinical_RADCURE.xlsx"
+        clinical_file = "rawdata/clinical/clinical_RADCURE.xlsx"
     shell:
         """
         wget -O {output} "https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2"

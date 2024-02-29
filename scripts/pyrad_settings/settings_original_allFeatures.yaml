@@ -1,0 +1,18 @@
+imageType:
+  Original: {}
+
+featureClass:
+  shape: 
+  firstorder:
+  glcm: 
+  glrlm: 
+  glszm: 
+  gldm:
+  ngtdm: 
+
+setting:
+  interpolator: 'sitkBSpline'
+  resampledPixelSpacing: [1, 1, 1]
+  padDistance: 10 
+  binWidth: 25
+  voxelArrayShift: 1000

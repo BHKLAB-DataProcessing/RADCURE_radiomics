@@ -18,8 +18,8 @@ PYRAD_SETTING = "scripts/radiomic_extraction/pyradiomics/pyrad_settings/uhn-radc
 
 rule all:
     input: 
-        radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
-        radFeatures_negcontrols = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS),
+        # radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
+        # radFeatures_negcontrols = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS),
         combined_radiomic_features = "results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
         combined_negative_control_features = expand("results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv", negative_control=NEG_CONTROLS),
         maeObject = "results/RADCURE_readii_radiomic_MAE.rds"
@@ -139,7 +139,9 @@ rule combineNegativeControlFeatures:
 rule makeMAE:
     input:
         clinical="rawdata/clinical/clinical_RADCURE.xlsx",
-        radiomic="results/snakemake_RADCURE/features",
+        radiomicDir="results/snakemake_RADCURE/features",
+        combined_radiomic_features ="results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
+        combined_negative_control_features = expand("results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv", negative_control=NEG_CONTROLS)
     output:
         outputFileName="results/RADCURE_readii_radiomic_MAE.rds"
     params:

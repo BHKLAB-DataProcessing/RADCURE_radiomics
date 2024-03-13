@@ -1,26 +1,24 @@
 import pandas as pd
 from pathlib import Path
-
+from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
+HTTP = HTTPRemoteProvider()
 
 #######################################################################
 # CONFIGURATION
 #######################################################################
+# Need to configure default resources memory and disk space for each group to be used in the cluster
 
-from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
-HTTP = HTTPRemoteProvider()
 # read in metadata/RADCURE_PatientIDs.csv 
 # PATIENT_IDS = pd.read_csv("metadata/RADCURE_RTSTRUCT_PatientIDs.csv")
 
 # # get 'Patient ID` column and convert to list
-# PATIENT_IDS = PATIENT_IDS["patient_ID"].unique().tolist()
 # patients, desc, series, file = glob_wildcards("rawdata/radiomics/RADCURE/{patient_id}/{desc}/{series}/{file}.dcm")
 # PATIENT_IDS = list(set(patients))
-# PATIENT_IDS = PATIENT_IDS[:2]
-# PATIENT_IDS = ["RADCURE-0005", "RADCURE-0006"]
 
 with open("metadata/patients_rtstruct.txt", 'r') as file:
     PATIENT_IDS = file.read().splitlines()
 
+PATIENT_IDS = PATIENT_IDS[:10]
 
 NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
               "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
@@ -51,6 +49,8 @@ rule runMedImageTools:
         readii_docker 
     # conda:
     #     envs / "medimage.yaml"
+    threads: 
+        1
     shell:
         """
         autopipeline {input.inputDir} /tmp --update --dry_run
@@ -74,6 +74,8 @@ rule runREADII:
     #     envs / "readii.yaml"
     retries:
         3
+    threads: 
+        1
     log:
         "logs/{patient_id}/readii/{patient_id}.log"
     shell:
@@ -105,6 +107,8 @@ rule runREADIINegativeControl:
     #     envs / "readii.yaml"
     retries:
         3
+    threads: 
+        1
     log:
         "logs/{patient_id}/readii/{patient_id}_{negative_control}.log"
     shell:

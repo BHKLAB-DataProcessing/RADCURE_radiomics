@@ -1,4 +1,4 @@
-from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
+# from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
 import pandas as pd
 # GS = GSRemoteProvider()
 
@@ -7,17 +7,17 @@ import pandas as pd
 # ids, = glob_wildcards("rawdata/radiomics/RADCURE/{patient_id}")
 
 # # read in metadata/RADCURE_PatientIDs.csv 
-# PATIENT_IDS = pd.read_csv("metadata/RADCURE_PatientIDs.csv")
+PATIENT_IDS = pd.read_csv("metadata/RADCURE_RTSTRUCT_PatientIDs.csv")
 # # get 'Patient ID` column and convert to list
-# PATIENT_IDS = PATIENT_IDS["PatientID"].unique().tolist()
-PATIENT_IDS = "RADCURE-0314", "RADCURE-0317"
+PATIENT_IDS = PATIENT_IDS["patient_ID"].unique().tolist()
+# PATIENT_IDS = "RADCURE-0368"
 NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
               "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
               "randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
-PYRAD_SETTING = "scripts/pyrad_settings/uhn-radcure-challenge_params.yaml"
+PYRAD_SETTING = "scripts/pyrad_settings/uhn-radcure-challenge_plus_aerts_params.yaml"
 
 rule all:
-    input: 
+    input:
         # radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
         # radFeatures_negcontrols = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS),
         combined_radiomic_features = "results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
@@ -48,7 +48,6 @@ rule runREADII:
         inputDir="rawdata/radiomics/RADCURE/{patient_id}",
         med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv"
     output:
-        # negative_control_files,
         outputDir=directory("results/{patient_id}"),
         radFeatures="results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv"
 
@@ -102,11 +101,10 @@ rule runREADIINegativeControl:
        
 rule combineRadiomicFeatures:
     input:
-        all_pat_radiomic_features = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
-        # all_negative_control_csv = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_controls}_{patient_id}_.csv",  patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS)
+        all_pat_radiomic_features = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS)
     output:
         combined_radiomic_features ="results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
-        # negative_control_radiomic_features="results/radiomic_output/snakemake_RADCURE/features/snakemake_RADCURE_negative_control_radiomic_features.csv"
+        radiomicDir = "results/snakemake_RADCURE/features"
     run:
     # combine all csvs from each input into respective output files, only include the header once 
         with open(output.combined_radiomic_features, "w") as radiomic_features:
@@ -123,7 +121,7 @@ rule combineNegativeControlFeatures:
     input:
         all_pat_negative_control_features = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv",  patient_id=PATIENT_IDS, negative_control="{negative_control}")
     output:
-        combined_negative_control_features = "results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv"
+        combined_negative_control_features = "results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv",
     run:
     # combine all csvs from each input into respective output files, only include the header once 
         with open(output.combined_negative_control_features, "w") as nc_radiomic_features:

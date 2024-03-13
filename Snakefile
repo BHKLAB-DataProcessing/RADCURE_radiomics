@@ -18,8 +18,6 @@ HTTP = HTTPRemoteProvider()
 with open("metadata/patients_rtstruct.txt", 'r') as file:
     PATIENT_IDS = file.read().splitlines()
 
-PATIENT_IDS = PATIENT_IDS[:10]
-
 NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
               "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
               "randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"

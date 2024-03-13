@@ -13,27 +13,12 @@ conda create -n snakemake -c conda-forge -c bioconda snakemake # (optional: sing
 ```
 
 
-## Running using buckets
-
-
+## Running using GCP (Google Cloud Platform)
 The bucket used is (GCP Project ID = `orcestra-388613`):
 
 ```bash
-orcestradata/radiomics/radcure_test_sample/
+snakemake --profile workflow/profiles/gcp --kubernetes
 ```
-
-
-```bash
-snakemake -c8 \
---use-conda \
---default-remote-provider=GS \
---default-remote-prefix=orcestradata/radiomics/radcure_test_sample/images \
---keep-remote 
-```
-
-
-where the `RADCURE-####` folders are all in `orcestradata/radiomics/radcure_test_sample/images`
-
 
 ### Using Singularity
 
@@ -59,7 +44,6 @@ snakemake -c1 --dag | dot -Tsvg > dag.svg
 ```
 
 
-
 # Testing individual scripts
 
 ```bash
@@ -77,5 +61,3 @@ python scripts/radiomic_extraction/radiogenomic_pipeline.py \
     --pyrad_param_file scripts/radiomic_extraction/pyradiomics/pyrad_settings/settings_original_allFeatures.yaml \
     --quality_checks True 
 ```
-
-

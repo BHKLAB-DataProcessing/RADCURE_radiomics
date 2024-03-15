@@ -18,6 +18,8 @@ HTTP = HTTPRemoteProvider()
 with open("metadata/patients_rtstruct.txt", 'r') as file:
     PATIENT_IDS = file.read().splitlines()
 
+PATIENT_IDS = PATIENT_IDS[0:100]
+
 NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
               "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
               "randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
@@ -45,10 +47,11 @@ rule runMedImageTools:
         "readii"
     container:
         readii_docker 
-    # conda:
-    #     envs / "medimage.yaml"
     threads: 
         1
+    resources:
+        mem_mb=500,
+        disk_mb=500
     shell:
         """
         autopipeline {input.inputDir} /tmp --update --dry_run
@@ -68,10 +71,9 @@ rule runREADII:
         roi_names="GTVp*",
     container:
         readii_docker
-    # conda:
-    #     envs / "readii.yaml"
-    retries:
-        3
+    resources:
+        mem_mb=500,
+        disk_mb=500
     threads: 
         1
     log:
@@ -101,12 +103,11 @@ rule runREADIINegativeControl:
         negative_controls = "{negative_control}"
     container:
         readii_docker
-    # conda:
-    #     envs / "readii.yaml"
-    retries:
-        3
     threads: 
         1
+    resources:
+        mem_mb=500,
+        disk_mb=500
     log:
         "logs/{patient_id}/readii/{patient_id}_{negative_control}.log"
     shell:

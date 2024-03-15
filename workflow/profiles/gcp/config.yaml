@@ -1,0 +1,12 @@
+show-failed-logs: True
+keep-going: True
+keep-incomplete: True
+rerun-incomplete: True
+printshellcmds: True
+use-singularity: True
+use-conda: True
+default-remote-provider: "GS"
+default-remote-prefix: "orcestradata/RADCURE_radiomics"
+
+# When running on Kubernetes
+jobs: 256

@@ -8,4 +8,4 @@ dependencies:
   - python=3.10.8
   - pip=21.3.1
   - pip:
-      - med-imagetools==1.1.6
+      - med-imagetools==1.2.0.2

@@ -86,3 +86,6 @@ def main():
                                                    negativeControl = args.negative_control,
                                                    randomSeed=args.random_seed,
                                                    parallel = args.parallel)
+
+if __name__ == "__main__":
+    main()

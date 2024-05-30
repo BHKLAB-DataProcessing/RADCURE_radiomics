@@ -74,3 +74,7 @@ def main():
                                                  pyradiomicsParamFilePath = args.pyradiomics_setting,
                                                  outputDirPath = outputDir,
                                                  parallel = args.parallel)
+
+
+if __name__ == "__main__":
+    main()

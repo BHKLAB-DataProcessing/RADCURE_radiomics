@@ -17,7 +17,9 @@ HTTP = HTTPRemoteProvider()
 
 with open("metadata/patients_rtstruct.txt", 'r') as file:
     PATIENT_IDS = file.read().splitlines()
-    
+
+PATIENT_IDS = PATIENT_IDS[:2]
+
 NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
               "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
               "randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
@@ -78,12 +80,21 @@ rule runREADII:
         "logs/{patient_id}/readii/{patient_id}.log"
     shell:
         """
-        OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures})))
-        readii {input.inputDir} $OUTPUT_DIR \
-            --roi_names {params.roi_names} \
-            --pyradiomics_setting {input.PYRAD_SETTING} \
-            --update  2>&1 | tee {log}
+        python scripts/readii_pipeline.py \
+            --data_directory $FILL_ME_IN \
+            --output_directory $FILL_ME_IN \
+            --roi_names $FILL_ME_IN \
+            --pyradiomics_setting $FILL_ME_IN \
+            --parallel $FILL_ME_IN
         """
+        # """
+        # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures})))
+        # readii {input.inputDir} $OUTPUT_DIR \
+        #     --roi_names {params.roi_names} \
+        #     --pyradiomics_setting {input.PYRAD_SETTING} \
+        #     --update  2>&1 | tee {log}
+        # """
+
 
 
 rule runREADIINegativeControl:
@@ -110,13 +121,23 @@ rule runREADIINegativeControl:
         "logs/{patient_id}/readii/{patient_id}_{negative_control}.log"
     shell:
         """
-        OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures_negcontrols})))
-        readii {input.inputDir} $OUTPUT_DIR \
-            --roi_names {params.roi_names} \
-            --pyradiomics_setting {input.PYRAD_SETTING} \
-            --negative_controls {params.negative_controls} \
-            --update  2>&1 | tee {log}
+        python scripts/readii_negative_control_pipeline.py \
+            --data_directory $FILL_ME_IN \
+            --output_directory $FILL_ME_IN \
+            --roi_names $FILL_ME_IN \
+            --pyradiomics_setting $FILL_ME_IN \
+            --negative_control $FILL_ME_IN \
+            --parallel $FILL_ME_IN \
+            --random_seed $FILL_ME_IN
         """
+        # """
+        # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures_negcontrols})))
+        # readii {input.inputDir} $OUTPUT_DIR \
+        #     --roi_names {params.roi_names} \
+        #     --pyradiomics_setting {input.PYRAD_SETTING} \
+        #     --negative_controls {params.negative_controls} \
+        #     --update  2>&1 | tee {log}
+        # """
 
        
 rule combineRadiomicFeatures:

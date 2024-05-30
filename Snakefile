@@ -26,6 +26,8 @@ NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
 
 PYRAD_SETTING = "scripts/pyrad_settings/uhn-radcure-challenge_plus_aerts_params.yaml"
 
+RANDOM_SEED = 10
+
 envs = Path("envs")
 medimagetools_docker = "docker://bhklab/med-imagetools:1.2.0.2"
 readii_docker = "docker://bhklab/readii:1.1.3"
@@ -80,12 +82,12 @@ rule runREADII:
         "logs/{patient_id}/readii/{patient_id}.log"
     shell:
         """
+        OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures})))
         python scripts/readii_pipeline.py \
-            --data_directory $FILL_ME_IN \
-            --output_directory $FILL_ME_IN \
-            --roi_names $FILL_ME_IN \
-            --pyradiomics_setting $FILL_ME_IN \
-            --parallel $FILL_ME_IN
+            --data_directory {input.inputDir} \
+            --output_directory $OUTPUT_DIR \
+            --roi_names {params.roi_names} \
+            --pyradiomics_setting {input.PYRAD_SETTING} | tee {log}
         """
         # """
         # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures})))
@@ -103,6 +105,7 @@ rule runREADIINegativeControl:
         inputDir="rawdata/radiomics/RADCURE/{patient_id}",
         med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
         PYRAD_SETTING = local(PYRAD_SETTING),
+        RANDOM_SEED = local(RANDOM_SEED)
     output:
         radFeatures_negcontrols = "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv"
     group:
@@ -121,14 +124,14 @@ rule runREADIINegativeControl:
         "logs/{patient_id}/readii/{patient_id}_{negative_control}.log"
     shell:
         """
+        OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures_negcontrols})))
         python scripts/readii_negative_control_pipeline.py \
-            --data_directory $FILL_ME_IN \
-            --output_directory $FILL_ME_IN \
-            --roi_names $FILL_ME_IN \
-            --pyradiomics_setting $FILL_ME_IN \
-            --negative_control $FILL_ME_IN \
-            --parallel $FILL_ME_IN \
-            --random_seed $FILL_ME_IN
+            --data_directory {input.inputDir} \
+            --output_directory $OUTPUT_DIR \
+            --roi_names {params.roi_names}  \
+            --pyradiomics_setting {input.PYRAD_SETTING} \
+            --negative_control {params.negative_controls} \
+            --random_seed {input.RANDOM_SEED}
         """
         # """
         # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures_negcontrols})))

@@ -1,28 +1,40 @@
-# from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
 import pandas as pd
-# GS = GSRemoteProvider()
+from pathlib import Path
+from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
+HTTP = HTTPRemoteProvider()
 
-# GS_PREFIX = "orcestradata/"
+#######################################################################
+# CONFIGURATION
+#######################################################################
+# Need to configure default resources memory and disk space for each group to be used in the cluster
 
-# ids, = glob_wildcards("rawdata/radiomics/RADCURE/{patient_id}")
+# read in metadata/RADCURE_PatientIDs.csv 
+# PATIENT_IDS = pd.read_csv("metadata/RADCURE_RTSTRUCT_PatientIDs.csv")
 
-# # read in metadata/RADCURE_PatientIDs.csv 
-PATIENT_IDS = pd.read_csv("metadata/RADCURE_RTSTRUCT_PatientIDs.csv")
 # # get 'Patient ID` column and convert to list
-PATIENT_IDS = PATIENT_IDS["patient_ID"].unique().tolist()
-# PATIENT_IDS = "RADCURE-0368"
+# patients, desc, series, file = glob_wildcards("rawdata/radiomics/RADCURE/{patient_id}/{desc}/{series}/{file}.dcm")
+# PATIENT_IDS = list(set(patients))
+
+with open("metadata/patients_rtstruct.txt", 'r') as file:
+    PATIENT_IDS = file.read().splitlines()
+
+PATIENT_IDS = PATIENT_IDS[:2]
+
 NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
               "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
               "randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
+
 PYRAD_SETTING = "scripts/pyrad_settings/uhn-radcure-challenge_plus_aerts_params.yaml"
+
+envs = Path("envs")
+medimagetools_docker = "docker://bhklab/med-imagetools:1.2.0.2"
+readii_docker = "docker://bhklab/readii:1.1.3"
 
 rule all:
     input:
         # radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
-        # radFeatures_negcontrols = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS),
-        combined_radiomic_features = "results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
-        combined_negative_control_features = expand("results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv", negative_control=NEG_CONTROLS),
         maeObject = "results/RADCURE_readii_radiomic_MAE.rds"
+        
 
 rule runMedImageTools:
     input: 
@@ -30,73 +42,102 @@ rule runMedImageTools:
     output: 
         csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
         json_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.json",
-        outputDir=directory("data/med-imageout/{patient_id}")
-    conda:
-        "envs/medimage.yaml"
-    retries:
+        # outputDir=temp(directory("data/med-imageout/{patient_id}"))
+    group:
+        "readii"
+    container:
+        readii_docker 
+    threads: 
         1
-    threads:
-        1
+    resources:
+        mem_mb=500,
+        disk_mb=500
     shell:
         """
-        autopipeline {input.inputDir} {output.outputDir} --update --dry_run
+        autopipeline {input.inputDir} /tmp --update --dry_run
         """
 
 
 rule runREADII:
     input:
         inputDir="rawdata/radiomics/RADCURE/{patient_id}",
-        med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv"
+        med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
+        PYRAD_SETTING = local(PYRAD_SETTING)
     output:
-        outputDir=directory("results/{patient_id}"),
         radFeatures="results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv"
-
+    group:
+        "readii"
     params:
         roi_names="GTVp*",
-        pyrad_setting=PYRAD_SETTING,
-    conda:
-        "envs/readii.yaml"
-    retries:
-        3
-    threads:
+    container:
+        readii_docker
+    resources:
+        mem_mb=500,
+        disk_mb=500
+    threads: 
         1
     log:
-        "logs/readii/{patient_id}.log"
+        "logs/{patient_id}/readii/{patient_id}.log"
     shell:
         """
-        readii {input.inputDir} {output.outputDir} \
-        --roi_names {params.roi_names} \
-        --pyradiomics_setting {params.pyrad_setting} \
-        --update > {log} 2>&1
+        python scripts/readii_pipeline.py \
+            --data_directory $FILL_ME_IN \
+            --output_directory $FILL_ME_IN \
+            --roi_names $FILL_ME_IN \
+            --pyradiomics_setting $FILL_ME_IN \
+            --parallel $FILL_ME_IN
         """
+        # """
+        # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures})))
+        # readii {input.inputDir} $OUTPUT_DIR \
+        #     --roi_names {params.roi_names} \
+        #     --pyradiomics_setting {input.PYRAD_SETTING} \
+        #     --update  2>&1 | tee {log}
+        # """
+
 
 
 rule runREADIINegativeControl:
     input:
+        rules.runREADII.output.radFeatures, # force the negative control to wait for the radiomic features to be generated
         inputDir="rawdata/radiomics/RADCURE/{patient_id}",
-        outputDir="results/{patient_id}",
+        med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
+        PYRAD_SETTING = local(PYRAD_SETTING),
     output:
         radFeatures_negcontrols = "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv"
+    group:
+        "readii"
     params:
         roi_names="GTVp*",
-        pyrad_setting=PYRAD_SETTING,
         negative_controls = "{negative_control}"
-    conda:
-        "envs/readii.yaml"
-    retries:
-        3
-    threads:
+    container:
+        readii_docker
+    threads: 
         1
+    resources:
+        mem_mb=500,
+        disk_mb=500
     log:
-        "logs/readii/{patient_id}_{negative_control}.log"
+        "logs/{patient_id}/readii/{patient_id}_{negative_control}.log"
     shell:
         """
-        readii {input.inputDir} {input.outputDir} \
-        --roi_names {params.roi_names} \
-        --pyradiomics_setting {params.pyrad_setting} \
-        --negative_controls {params.negative_controls} \
-        --update > {log} 2>&1
+        python scripts/readii_negative_control_pipeline.py \
+            --data_directory $FILL_ME_IN \
+            --output_directory $FILL_ME_IN \
+            --roi_names $FILL_ME_IN \
+            --pyradiomics_setting $FILL_ME_IN \
+            --negative_control $FILL_ME_IN \
+            --parallel $FILL_ME_IN \
+            --random_seed $FILL_ME_IN
         """
+        # """
+        # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures_negcontrols})))
+        # readii {input.inputDir} $OUTPUT_DIR \
+        #     --roi_names {params.roi_names} \
+        #     --pyradiomics_setting {input.PYRAD_SETTING} \
+        #     --negative_controls {params.negative_controls} \
+        #     --update  2>&1 | tee {log}
+        # """
 
        
 rule combineRadiomicFeatures:
@@ -104,7 +145,7 @@ rule combineRadiomicFeatures:
         all_pat_radiomic_features = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS)
     output:
         combined_radiomic_features ="results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
-        radiomicDir = "results/snakemake_RADCURE/features"
+        radiomicDir = directory("results/snakemake_RADCURE/features")
     run:
     # combine all csvs from each input into respective output files, only include the header once 
         with open(output.combined_radiomic_features, "w") as radiomic_features:
@@ -115,6 +156,7 @@ rule combineRadiomicFeatures:
                     else:
                         radiomic_csv.readline()
                         radiomic_features.write(radiomic_csv.read())
+
 
 
 rule combineNegativeControlFeatures:
@@ -136,28 +178,30 @@ rule combineNegativeControlFeatures:
 
 rule makeMAE:
     input:
-        clinical="rawdata/clinical/clinical_RADCURE.xlsx",
-        radiomicDir="results/snakemake_RADCURE/features",
+        combined_negative_control_features = expand("results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv", negative_control=NEG_CONTROLS),
         combined_radiomic_features ="results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
-        combined_negative_control_features = expand("results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv", negative_control=NEG_CONTROLS)
+        clinical="rawdata/clinical/clinical_RADCURE.xlsx",
+        PYRAD_SETTING = local(PYRAD_SETTING),
+        # radiomicDir="results/snakemake_RADCURE/features",
     output:
         outputFileName="results/RADCURE_readii_radiomic_MAE.rds"
     params:
-        pyrad=PYRAD_SETTING,
         findFeature="firstorder_10Percentile",
         clinicalPatIDCol="patient_id",
         radiomicPatIDCol="patient_ID",
     conda:
-        "envs/makeMAE.yaml"
+        envs / "makeMAE.yaml"
     script:
         "scripts/makeRadiogenomicMAE.R"
 
 
 rule getClinicalData:
+    input:
+        file = HTTP.remote("https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2")
     output:
         clinical_file = "rawdata/clinical/clinical_RADCURE.xlsx"
     shell:
         """
-        wget -O {output} "https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2"
+        mv {input.file} {output.clinical_file}
         """
 

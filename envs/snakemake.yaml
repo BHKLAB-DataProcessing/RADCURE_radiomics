@@ -1,0 +1,14 @@
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - singularity
+  - pandas
+  - snakemake=7.32.4
+  # - snakemake=8.6.0
+  # - snakemake-storage-plugin-gcs=0.1.4
+  # - snakemake-storage-plugin-s3=0.2.10
+  # - snakemake-executor-plugin-kubernetes=0.1.5
+  # - snakemake-storage-plugin-http=0.2.3
+  # - snakemake-interface-executor-plugins=9.0.0

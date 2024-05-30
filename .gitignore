@@ -2,7 +2,7 @@
 .snakemake*
 data/*.rds
 data*
-rawdata/*
+rawdata
 *pycache*
 clinical/
 logs/
@@ -11,3 +11,4 @@ scripts/dicomsort.py
 trash/
 orcestradata
 old_results
+rawdata

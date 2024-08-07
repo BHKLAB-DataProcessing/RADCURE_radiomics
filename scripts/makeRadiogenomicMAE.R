@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 library(dplyr)
 library(MuData)
 library(MultiAssayExperiment)
@@ -7,6 +9,7 @@ library(rhdf5)
 library(stringr)
 library(tools)
 library(yaml)
+library(argparser)
 
 #' Function to make the radiomic Summarized Experiment object containing assays
 #' for each image filter, image metadata as the coldata, and the pyradiomic
@@ -120,7 +123,6 @@ loadRadiogenomicDataFile <- function(dataFilePath) {
 makeRadiogenomicMAE <- function(clinicalDataFilePath,
                                 radiomicDataDirPath,
                                 pyradiomicsConfigFile,
-                                negativeControlDataFilePath = NULL,
                                 findFeature = "firstorder_10Percentile",
                                 genomicDataFilePath = NULL,
                                 outputFileName = "outputMAE.rds",
@@ -149,6 +151,7 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
     sampleMap <- data.frame()
     tempExpList <- list()
     radFeaturesFilePaths = list.files(radiomicDataDirPath, full.names = TRUE)
+    # Loop over each radiomic file, including any negative controls
     for (idx in seq_along(radFeaturesFilePaths)) {
         # Load in radiomic data
         radiomicDataframe <- loadRadiogenomicDataFile(radFeaturesFilePaths[[idx]])
@@ -251,32 +254,41 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
 }
 
 
+# Initialized command line argument parser
+parser <- arg_parser("make MAE")
+# Positional arguments
+parser <- add_argument(parser, "clinical_data_file_path", help="Path to clinical data file.")
+parser <- add_argument(parser, "radiomic_data_dir_path", help="Path to any radiomic features csv file. Any other files in this directory will be included in MAE")
+parser <- add_argument(parser, "output_file_name", help="File path to save resulting MultiAssayExperiment to.")
+parser <- add_argument(parser, "pyradiomics_config_file", help="Path to PyRadiomics config file (yaml) used for feature extraction.")
+# Optional arguments
+parser <- add_argument(parser, "--radiomic_find_feature", help="A radiomic feature that has been included in the extraction, used to find all the filter types. Cannot be a shape feature.", default="firstorder_10Percentile")
+parser <- add_argument(parser, "--clinical_patient_id", help="Name of the patient identifier column in clinical data.", default="Case ID")
+parser <- add_argument(parser, "--radiomic_patient_id", help="Name of the patient identifier column in radiomic data.", default="patient_ID")
 
+args <- parse_args(parser)
 
-
-# -- Read in Snakemake parameters
-clinicalDataFilePath <- snakemake@input$clinical
+# # -- Read in Snakemake parameters
+# clinicalDataFilePath <- args
 
 # radiomicDataDirPath <- snakemake@input$radiomicDir
-radiomicDataDirPath <- dirname(snakemake@input$combined_radiomic_features)
+radiomicDataDirPath <- dirname(args$radiomic_data_dir_path)
+
+# outputFileName <- snakemake@output$outputFileName
+
+# pyradiomicsConfigFile <- snakemake@input$PYRAD_SETTING
+
+# findFeature <- snakemake@params$findFeature
+# clinicalPatIDCol <- snakemake@params$clinicalPatIDCol
+# radiomicPatIDCol <- snakemake@params$radiomicPatIDCol
 
 
-# negativeControlDataFilePath <- snakemake@input$negativecontrol
-
-outputFileName <- snakemake@output$outputFileName
-
-pyradiomicsConfigFile <- snakemake@input$PYRAD_SETTING
-
-findFeature <- snakemake@params$findFeature
-clinicalPatIDCol <- snakemake@params$clinicalPatIDCol
-radiomicPatIDCol <- snakemake@params$radiomicPatIDCol
 
 # Call function
-makeRadiogenomicMAE(clinicalDataFilePath,
-                    radiomicDataDirPath,
-                    pyradiomicsConfigFile,
-                    negativeControlDataFilePath,
-                    findFeature,
-                    outputFileName = outputFileName,
-                    clinicalPatIDCol = clinicalPatIDCol,
-                    radiomicPatIDCol = radiomicPatIDCol)
+makeRadiogenomicMAE(clinicalDataFilePath = args$clinical_data_file_path,
+                    radiomicDataDirPath = radiomicDataDirPath,
+                    pyradiomicsConfigFile = args$pyradiomics_config_file,
+                    findFeature = args$radiomic_find_feature,
+                    outputFileName = args$output_file_name,
+                    clinicalPatIDCol = args$clinical_patient_id,
+                    radiomicPatIDCol = args$radiomic_patient_id)

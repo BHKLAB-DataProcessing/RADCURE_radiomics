@@ -18,19 +18,21 @@ HTTP = HTTPRemoteProvider()
 with open("metadata/patients_rtstruct.txt", 'r') as file:
     PATIENT_IDS = file.read().splitlines()
 
-PATIENT_IDS = PATIENT_IDS[:2]
+# PATIENT_IDS = "PATIENT_IDS[:100]"
 
-NEG_CONTROLS= "randomized_full", "randomized_roi", "randomized_non_roi", \
-              "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
-              "randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
+NEG_CONTROLS= "randomized_roi", "randomized_non_roi"
+
+##"randomized_full", "randomized_roi", "randomized_non_roi", \
+## "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
+##"randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
 
 PYRAD_SETTING = "scripts/pyrad_settings/uhn-radcure-challenge_plus_aerts_params.yaml"
 
 RANDOM_SEED = 10
-
+READII_ROI_REGEX = "GTVp*"
 envs = Path("envs")
 medimagetools_docker = "docker://bhklab/med-imagetools:1.2.0.2"
-readii_docker = "docker://bhklab/readii:1.1.3"
+readii_docker = "docker://bhklab/readii:1.4.2"
 
 rule all:
     input:
@@ -47,8 +49,10 @@ rule runMedImageTools:
         # outputDir=temp(directory("data/med-imageout/{patient_id}"))
     group:
         "readii"
-    container:
-        readii_docker 
+    conda:
+        "envs/medimage.yaml"
+    # container:
+    #     readii_docker 
     threads: 
         1
     resources:
@@ -70,9 +74,11 @@ rule runREADII:
     group:
         "readii"
     params:
-        roi_names="GTVp*",
-    container:
-        readii_docker
+        roi_names=READII_ROI_REGEX,
+    conda:
+        "envs/readii.yaml"
+    # container:
+    #     readii_docker
     resources:
         mem_mb=500,
         disk_mb=500
@@ -105,16 +111,18 @@ rule runREADIINegativeControl:
         inputDir="rawdata/radiomics/RADCURE/{patient_id}",
         med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
         PYRAD_SETTING = local(PYRAD_SETTING),
-        RANDOM_SEED = local(RANDOM_SEED)
     output:
         radFeatures_negcontrols = "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv"
     group:
         "readii"
     params:
-        roi_names="GTVp*",
+        RANDOM_SEED = RANDOM_SEED,
+        roi_names=READII_ROI_REGEX,
         negative_controls = "{negative_control}"
-    container:
-        readii_docker
+    conda:
+        "envs/readii.yaml"
+    # container:
+    #     readii_docker
     threads: 
         1
     resources:
@@ -131,7 +139,7 @@ rule runREADIINegativeControl:
             --roi_names {params.roi_names}  \
             --pyradiomics_setting {input.PYRAD_SETTING} \
             --negative_control {params.negative_controls} \
-            --random_seed {input.RANDOM_SEED}
+            --random_seed {params.RANDOM_SEED}
         """
         # """
         # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures_negcontrols})))
@@ -164,7 +172,10 @@ rule combineRadiomicFeatures:
 
 rule combineNegativeControlFeatures:
     input:
-        all_pat_negative_control_features = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv",  patient_id=PATIENT_IDS, negative_control="{negative_control}")
+        all_pat_negative_control_features = expand(
+            "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv",  
+            patient_id=PATIENT_IDS, negative_control="{negative_control}")
+        # radFeatures_negcontrols = "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv"
     output:
         combined_negative_control_features = "results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv",
     run:
@@ -193,7 +204,7 @@ rule makeMAE:
         clinicalPatIDCol="patient_id",
         radiomicPatIDCol="patient_ID",
     conda:
-        envs / "makeMAE.yaml"
+        "envs/makeMAE.yaml"
     script:
         "scripts/makeRadiogenomicMAE.R"
 

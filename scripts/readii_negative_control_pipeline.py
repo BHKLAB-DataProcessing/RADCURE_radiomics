@@ -67,15 +67,17 @@ def main():
 
     # Check if image metadata file has already been created
     imageMetadataPath = os.path.join(outputDir, "ct_to_seg_match_list_" + datasetName + ".csv")
-    print("Matching CT to segmentations...")
-    # Generate image metadata file by matching CT and segmentations in imageFileList from med-imagetools
-    matchCTtoSegmentation(imgFileListPath = imageFileListPath,
-                            segType = segType,
-                            outputDirPath = outputDir)
+    if not os.path.exists(imageMetadataPath):
+        print("Matching CT to segmentations...")
+        # Generate image metadata file by matching CT and segmentations in imageFileList from med-imagetools
+        matchCTtoSegmentation(imgFileListPath = imageFileListPath,
+                                segType = segType,
+                                outputDirPath = outputDir)
+    else: 
+        print("Image metadata file has already been created.")
 
-
-    print("Starting radiomic feature extraction...")
-    ncRadFeatOutPath = os.path.join(outputDir, "features/", "radiomicfeatures_" + args.negative_control + "_" + datasetName + ".csv")
+    # print("Starting radiomic feature extraction...")
+    # ncRadFeatOutPath = os.path.join(outputDir, "features/", "radiomicfeatures_" + args.negative_control + "_" + datasetName + ".csv")
 
     print("Starting radiomic feature extraction for negative control: ", args.negative_control)
     ncRadiomicFeatures = radiomicFeatureExtraction(imageMetadataPath = imageMetadataPath,

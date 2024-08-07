@@ -72,7 +72,7 @@ def main():
         # Generate image metadata file by matching CT and segmentations in imageFileList from med-imagetools
         matchCTtoSegmentation(imgFileListPath = imageFileListPath,
                                 segType = segType,
-                                outputDirPath = outputDir)
+                                outputFilePath = imageMetadataPath)
     else: 
         print("Image metadata file has already been created.")
 

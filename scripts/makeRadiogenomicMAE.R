@@ -268,21 +268,9 @@ parser <- add_argument(parser, "--radiomic_patient_id", help="Name of the patien
 
 args <- parse_args(parser)
 
-# # -- Read in Snakemake parameters
-# clinicalDataFilePath <- args
 
 # radiomicDataDirPath <- snakemake@input$radiomicDir
 radiomicDataDirPath <- dirname(args$radiomic_data_dir_path)
-
-# outputFileName <- snakemake@output$outputFileName
-
-# pyradiomicsConfigFile <- snakemake@input$PYRAD_SETTING
-
-# findFeature <- snakemake@params$findFeature
-# clinicalPatIDCol <- snakemake@params$clinicalPatIDCol
-# radiomicPatIDCol <- snakemake@params$radiomicPatIDCol
-
-
 
 # Call function
 makeRadiogenomicMAE(clinicalDataFilePath = args$clinical_data_file_path,

@@ -3,6 +3,10 @@ import os
 
 from readii.metadata import *
 from readii.feature_extraction import *
+import radiomics
+from func_timeout import func_timeout, FunctionTimedOut
+import yaml
+
 
 def parser():
     """Function to take command-line arguments and set them up for the pipeline run
@@ -69,8 +73,9 @@ def main():
     imageMetadataPath = os.path.join(outputDir, "ct_to_seg_match_list_" + datasetName + ".csv")
     if not os.path.exists(imageMetadataPath):
         print("Matching CT to segmentations...")
-        # Generate image metadata file by matching CT and segmentations in imageFileList from med-imagetools
-        matchCTtoSegmentation(imgFileListPath = imageFileListPath,
+        # Generate image metadata file by getting edges of type 2 in edge graph from med-imagetools
+        imageFileEdgesPath = os.path.join(parentDirPath + "/.imgtools/imgtools_" + datasetName + "_edges.csv")
+        getCTWithSegmentation(imgFileEdgesPath = imageFileEdgesPath,
                                 segType = segType,
                                 outputFilePath = imageMetadataPath)
     else: 
@@ -80,14 +85,44 @@ def main():
     # ncRadFeatOutPath = os.path.join(outputDir, "features/", "radiomicfeatures_" + args.negative_control + "_" + datasetName + ".csv")
 
     print("Starting radiomic feature extraction for negative control: ", args.negative_control)
-    ncRadiomicFeatures = radiomicFeatureExtraction(imageMetadataPath = imageMetadataPath,
-                                                   imageDirPath = parentDirPath,
-                                                   roiNames = args.roi_names,
-                                                   pyradiomicsParamFilePath = args.pyradiomics_setting,
-                                                   outputDirPath = outputDir,
-                                                   negativeControl = args.negative_control,
-                                                   randomSeed=args.random_seed,
-                                                   parallel = args.parallel)
+
+    try:
+        # Timeout is 20 hours = 72,000 seconds
+        ncRadiomicFeatures = func_timeout(timeout = 72000, func = radiomicFeatureExtraction, 
+                                          args = (imageMetadataPath, parentDirPath, args.roi_names, args.pyradiomics_setting, 
+                                                  outputDir, args.negative_control, args.random_seed, args.parallel))
+    except FunctionTimedOut:
+        print("Passed radiomic features took too long to run. Removing Wavelet filter and running again.")
+        
+        # Log that this sample timed out for wavelet
+        waveletLogFilePath = os.path.join(os.path.dirname(outputDir), "wavelet_logs/no_wavelet_features_list.log")
+        os.makedirs(os.path.dirname(waveletLogFilePath), exist_ok=True)
+        if not os.path.exists(waveletLogFilePath):
+            waveletLogFile = open(waveletLogFilePath, "w")
+        else:
+            waveletLogFile = open(waveletLogFilePath, "a")
+        
+        waveletLogFile.write(datasetName)
+        waveletLogFile.close()
+
+        # Update the pyradiomics settings by removing the Wavelet filtering
+        with open(args.pyradiomics_setting, 'r') as pyradFile:
+            dictPyradiomicsSettings = yaml.safe_load(pyradFile)
+
+        # Drop wavelet filter
+        del dictPyradiomicsSettings['imageType']['Wavelet']
+
+
+        ncRadiomicFeatures = radiomicFeatureExtraction(imageMetadataPath = imageMetadataPath,
+                                                       imageDirPath = parentDirPath,
+                                                       roiNames = args.roi_names,
+                                                       pyradiomicsParamFilePath = dictPyradiomicsSettings,
+                                                       outputDirPath = outputDir,
+                                                       negativeControl = args.negative_control,
+                                                       randomSeed=args.random_seed,
+                                                       parallel = args.parallel)
+    except Exception as e:
+        print(e)
 
 if __name__ == "__main__":
     main()

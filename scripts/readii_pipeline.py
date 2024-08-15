@@ -61,10 +61,12 @@ def main():
     # Check if image metadata file has already been created
     imageMetadataPath = os.path.join(outputDir, "ct_to_seg_match_list_" + datasetName + ".csv")
     print("Matching CT to segmentations...")
-    # Generate image metadata file by matching CT and segmentations in imageFileList from med-imagetools
-    matchCTtoSegmentation(imgFileListPath = imageFileListPath,
+    # Generate image metadata file by getting edges of type 2 in edge graph from med-imagetools
+    imageFileEdgesPath = os.path.join(parentDirPath + "/.imgtools/imgtools_" + datasetName + "_edges.csv")
+    getCTWithSegmentation(imgFileEdgesPath = imageFileEdgesPath,
                             segType = segType,
                             outputFilePath = imageMetadataPath)
+
 
 
     print("Starting radiomic feature extraction...")

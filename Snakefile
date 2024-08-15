@@ -20,25 +20,23 @@ with open("metadata/patients_rtstruct.txt", 'r') as file:
 
 # PATIENT_IDS = "PATIENT_IDS[:100]"
 
-NEG_CONTROLS= "randomized_roi", "randomized_non_roi"
+configfile: "config/snakeconfig.yaml"
 
-##"randomized_full", "randomized_roi", "randomized_non_roi", \
-## "shuffled_full", "shuffled_roi", "shuffled_non_roi", \
-##"randomized_sampled_full", "randomized_sampled_roi", "randomized_sampled_non_roi"
+RANDOM_SEED = config['RANDOM_SEED']
+READII_ROI_REGEX = config['READII_ROI_REGEX']
+NEG_CONTROLS = config['NEG_CONTROLS']
+PYRAD_SETTING = config['PYRAD_SETTING']
 
-PYRAD_SETTING = "scripts/pyrad_settings/uhn-radcure-challenge_plus_aerts_params.yaml"
 
-RANDOM_SEED = 10
-READII_ROI_REGEX = "GTVp*"
 envs = Path("envs")
 medimagetools_docker = "docker://bhklab/med-imagetools:1.2.0.2"
 readii_docker = "docker://bhklab/readii:1.4.2"
 
 rule all:
     input:
-        #radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
+        radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
         #ncRadFeatures =  expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", 
-                                patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS)
+                                # patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS)
         maeObject = "results/RADCURE_readii_radiomic_MAE.rds"
         
 
@@ -99,14 +97,6 @@ rule runREADII:
             --roi_names {params.roi_names} \
             --pyradiomics_setting {input.PYRAD_SETTING} | tee {log}
         """
-        # """
-        # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures})))
-        # readii {input.inputDir} $OUTPUT_DIR \
-        #     --roi_names {params.roi_names} \
-        #     --pyradiomics_setting {input.PYRAD_SETTING} \
-        #     --update  2>&1 | tee {log}
-        # """
-
 
 
 rule runREADIINegativeControl:
@@ -146,14 +136,6 @@ rule runREADIINegativeControl:
             --negative_control {params.negative_controls} \
             --random_seed {params.RANDOM_SEED}
         """
-        # """
-        # OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures_negcontrols})))
-        # readii {input.inputDir} $OUTPUT_DIR \
-        #     --roi_names {params.roi_names} \
-        #     --pyradiomics_setting {input.PYRAD_SETTING} \
-        #     --negative_controls {params.negative_controls} \
-        #     --update  2>&1 | tee {log}
-        # """
 
        
 rule combineRadiomicFeatures:

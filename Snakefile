@@ -36,7 +36,9 @@ readii_docker = "docker://bhklab/readii:1.4.2"
 
 rule all:
     input:
-        # radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
+        #radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
+        #ncRadFeatures =  expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", 
+                                patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS)
         maeObject = "results/RADCURE_readii_radiomic_MAE.rds"
         
 
@@ -46,6 +48,7 @@ rule runMedImageTools:
     output: 
         csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
         json_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.json",
+        edge_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}_edges.csv"
         # outputDir=temp(directory("data/med-imageout/{patient_id}"))
     group:
         "readii"
@@ -68,6 +71,7 @@ rule runREADII:
     input:
         inputDir="rawdata/radiomics/RADCURE/{patient_id}",
         med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
+        med_image_csv_edge_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}_edges.csv",
         PYRAD_SETTING = local(PYRAD_SETTING)
     output:
         radFeatures="results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv"
@@ -110,6 +114,7 @@ rule runREADIINegativeControl:
         rules.runREADII.output.radFeatures, # force the negative control to wait for the radiomic features to be generated
         inputDir="rawdata/radiomics/RADCURE/{patient_id}",
         med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
+        med_image_csv_edges_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}_edges.csv",
         PYRAD_SETTING = local(PYRAD_SETTING),
     output:
         radFeatures_negcontrols = "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv"
@@ -205,8 +210,13 @@ rule makeMAE:
         radiomicPatIDCol="patient_ID",
     conda:
         "envs/makeMAE.yaml"
-    script:
-        "scripts/makeRadiogenomicMAE.R"
+    shell:
+        """
+        ./scripts/makeRadiogenomicMAE.R {input.clinical} {input.combined_radiomic_features} {output.outputFileName} {input.PYRAD_SETTING} \
+            --radiomic_find_feature {params.findFeature} \
+            --clinical_patient_id {params.clinicalPatIDCol} \
+            --radiomic_patient_id {params.radiomicPatIDCol}
+        """
 
 
 rule getClinicalData:

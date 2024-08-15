@@ -8,4 +8,5 @@ dependencies:
   - python=3.9.18
   - pip=24.0
   - pip:
-      - readii==1.6.2
+      - readii==1.6.4
+      - func-timeout==4.3.5

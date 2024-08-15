@@ -1,0 +1,35 @@
+DATASET_NAME: RADCURE
+
+# Seed for replicable results
+RANDOM_SEED: 10
+
+# READII radiomic feature extraction settings
+# Regex for ROI in RTSTRUCT to extract features from
+READII_ROI_REGEX: "GTVp*"
+
+# Which READII negative controls to create
+NEG_CONTROLS: 
+  - shuffled_full
+  - shuffled_roi
+  - shuffled_non_roi
+  - randomized_full
+  - randomized_roi
+  - randomized_non_roi
+  - randomized_sampled_full
+  - randomized_sampled_roi
+  - randomized_sampled_non_roi
+
+# Configuration for PyRadiomics feature extraction
+PYRAD_SETTING: "scripts/pyrad_settings/uhn-radcure-challenge_plus_aerts_params.yaml"
+
+
+# MAE generation settings
+# Link to download clinical data
+CLINICAL_FILE_LINK: https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2
+
+# Name of the patient ID column in the clinical file
+CLINICAL_PATIENT_ID_COL: patient_id
+
+# Feature to use to find beginning of radiomic features in the READII outputs. Cannot be a shape feature. If using default settings, can use firstorder_10Percentile
+FIND_FEATURE: firstorder_10Percentile
+  

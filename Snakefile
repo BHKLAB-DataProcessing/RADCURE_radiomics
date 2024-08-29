@@ -14,11 +14,14 @@ HTTP = HTTPRemoteProvider()
 # # get 'Patient ID` column and convert to list
 # patients, desc, series, file = glob_wildcards("rawdata/radiomics/RADCURE/{patient_id}/{desc}/{series}/{file}.dcm")
 # PATIENT_IDS = list(set(patients))
+patientFile = "metadata/patients_rtstruct.txt"
+# patientFile = "metadata/broken_random_roi_patients.txt"
 
-with open("metadata/patients_rtstruct.txt", 'r') as file:
+with open(patientFile, 'r') as file:
     PATIENT_IDS = file.read().splitlines()
 
 # PATIENT_IDS = "PATIENT_IDS[:100]"
+# PATIENT_IDS = ["RADCURE-2454"]
 
 configfile: "config/snakeconfig.yaml"
 
@@ -34,9 +37,9 @@ readii_docker = "docker://bhklab/readii:1.4.2"
 
 rule all:
     input:
-        radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
-        #ncRadFeatures =  expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", 
-                                # patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS)
+        # radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
+        # ncRadFeatures =  expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", 
+        #                         patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS)
         maeObject = "results/RADCURE_readii_radiomic_MAE.rds"
         
 
@@ -86,16 +89,19 @@ rule runREADII:
         disk_mb=500
     threads: 
         1
+    # retries:
+    #     2
     log:
         "logs/{patient_id}/readii/{patient_id}.log"
     shell:
         """
+        export READII_VERBOSITY=DEBUG
         OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures})))
         python scripts/readii_pipeline.py \
             --data_directory {input.inputDir} \
             --output_directory $OUTPUT_DIR \
             --roi_names {params.roi_names} \
-            --pyradiomics_setting {input.PYRAD_SETTING} | tee {log}
+            --pyradiomics_setting {input.PYRAD_SETTING} 2>&1 | tee {log}
         """
 
 
@@ -120,6 +126,8 @@ rule runREADIINegativeControl:
     #     readii_docker
     threads: 
         1
+    retries:
+        5
     resources:
         mem_mb=500,
         disk_mb=500
@@ -127,6 +135,7 @@ rule runREADIINegativeControl:
         "logs/{patient_id}/readii/{patient_id}_{negative_control}.log"
     shell:
         """
+        export READII_VERBOSITY=DEBUG
         OUTPUT_DIR=$(dirname $(dirname $(dirname {output.radFeatures_negcontrols})))
         python scripts/readii_negative_control_pipeline.py \
             --data_directory {input.inputDir} \
@@ -134,7 +143,7 @@ rule runREADIINegativeControl:
             --roi_names {params.roi_names}  \
             --pyradiomics_setting {input.PYRAD_SETTING} \
             --negative_control {params.negative_controls} \
-            --random_seed {params.RANDOM_SEED}
+            --random_seed {params.RANDOM_SEED} 2>&1 | tee {log}
         """
 
        
@@ -197,7 +206,7 @@ rule makeMAE:
         ./scripts/makeRadiogenomicMAE.R {input.clinical} {input.combined_radiomic_features} {output.outputFileName} {input.PYRAD_SETTING} \
             --radiomic_find_feature {params.findFeature} \
             --clinical_patient_id {params.clinicalPatIDCol} \
-            --radiomic_patient_id {params.radiomicPatIDCol}
+            --radiomic_patient_id {params.radiomicPatIDCol} 2>&1 | tee {log}
         """
 
 
@@ -210,4 +219,3 @@ rule getClinicalData:
         """
         mv {input.file} {output.clinical_file}
         """
-

@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 library(dplyr)
 library(MuData)
 library(MultiAssayExperiment)
@@ -7,6 +9,7 @@ library(rhdf5)
 library(stringr)
 library(tools)
 library(yaml)
+library(argparser)
 
 #' Function to make the radiomic Summarized Experiment object containing assays
 #' for each image filter, image metadata as the coldata, and the pyradiomic
@@ -110,7 +113,7 @@ loadRadiogenomicDataFile <- function(dataFilePath) {
 #' Also built to build just a radiomic one with no genomic data
 #'
 #' @param clinicalDataFilePath A string of the path to the clinical data file (csv or xlsx)
-#' @param radiomicDataFilePath A string of the path to the radiomic features file (csv or xlsx)
+#' @param radiomicDataDirPath A string of the path to the directory containing radiomic features files (csv or xlsx)
 #' @param pyradiomicsConfigFile A string of the path to the configuration file for the PyRadiomics radiomic feature extraction (yaml)
 #' @param findFeature A string, a feature that has been included in the extraction, used to find all the filter types.
 #' @param genomicDataFilePath A string of the path to the genomic feature file (csv or xlsx). If not provided, radiomic MAE constructed.
@@ -118,17 +121,16 @@ loadRadiogenomicDataFile <- function(dataFilePath) {
 #' @param clinicalPatIDCol A string, column name of the patient IDs in the clinical data file
 #' @param radiomicPatIDCol A string, column name of the patient IDs in the radiomic feature file
 makeRadiogenomicMAE <- function(clinicalDataFilePath,
-                                radiomicDataFilePath,
+                                radiomicDataDirPath,
                                 pyradiomicsConfigFile,
-                                negativeControlDataFilePath = NULL,
                                 findFeature = "firstorder_10Percentile",
                                 genomicDataFilePath = NULL,
                                 outputFileName = "outputMAE.rds",
                                 clinicalPatIDCol = "Case ID",
                                 radiomicPatIDCol = "patient_ID") {
-    # Load everything
+    # Load clinical data
     clinicalDataframe = loadRadiogenomicDataFile(clinicalDataFilePath)
-    radiomicDataframe = loadRadiogenomicDataFile(radiomicDataFilePath)
+    # Load genomic data
     genomicDataframe = loadRadiogenomicDataFile(genomicDataFilePath)
 
     # Check if genomic data is being included in object and set flag accordingly
@@ -146,11 +148,51 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
         pyradiomicsConfig <- read_yaml(pyradiomicsConfigFile)
     }
 
-    # Cross reference patient IDs
-    clinicalPatIDs <- clinicalDataframe[[clinicalPatIDCol]]
-    radiomicPatIDs <- radiomicDataframe[[radiomicPatIDCol]]
-    # Get intersection of patients in clinical and radiomic data
-    selectPatIDs <- unique(intersect(clinicalPatIDs, radiomicPatIDs))
+    sampleMap <- data.frame()
+    tempExpList <- list()
+    radFeaturesFilePaths = list.files(radiomicDataDirPath, full.names = TRUE)
+    # Loop over each radiomic file, including any negative controls
+    for (idx in seq_along(radFeaturesFilePaths)) {
+        # Load in radiomic data
+        radiomicDataframe <- loadRadiogenomicDataFile(radFeaturesFilePaths[[idx]])
+
+        # Get negative control name
+        negativeControlName <- radiomicDataframe[1, "negative_control"]
+
+        if (is.na(negativeControlName)) {
+            experimentName <- "radiomics"
+        } else {
+            experimentName <- paste(negativeControlName, "radiomics", sep = "_")
+        }
+
+        # if first file, cross reference patient IDs with clinical
+        if (idx == 1) {
+            # Cross reference patient IDs
+            clinicalPatIDs <- clinicalDataframe[[clinicalPatIDCol]]
+            radiomicPatIDs <- radiomicDataframe[[radiomicPatIDCol]]
+            # Get intersection of patients in clinical and radiomic data
+            selectPatIDs <- unique(intersect(clinicalPatIDs, radiomicPatIDs))
+        }
+
+        # get subset of patient IDs
+        selectPatRadiomicData <- filter(radiomicDataframe, radiomicDataframe[[radiomicPatIDCol]] %in% selectPatIDs)
+
+        # Make the summarized experiment
+        radiomicSEO <- makeRadiomicSEO(selectPatRadiomicData, pyradiomicsConfig = pyradiomicsConfig)
+
+        # Make sample map / initialize sample map
+        radiomicColname <- colnames(radiomicSEO)
+        radiomicPrimary <- selectPatRadiomicData[[radiomicPatIDCol]]
+        radiomicAssay <- rep(factor(experimentName), each = length(radiomicPrimary))
+        radSampleMap <- data.frame(assay = radiomicAssay,
+                                primary = radiomicPrimary,
+                                colname = radiomicColname)
+
+        sampleMap <- rbind(sampleMap, radSampleMap)
+
+        # add to exeriment list with negative control name
+        tempExpList[[experimentName]] <- radiomicSEO
+    }
 
     # If there is genomic data, create Summarized Experiment to add to the MAE
     if (noGene != FALSE) {
@@ -169,42 +211,6 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
                                            colData = selectPatIDs)
     }
 
-    # Prepare clinical data for MAE
-    selectPatClinicalData <- filter(clinicalDataframe, clinicalDataframe[[clinicalPatIDCol]] %in% selectPatIDs)
-    selectPatClinicalData <- as.data.frame(selectPatClinicalData)
-    rownames(selectPatClinicalData) <- selectPatClinicalData[[clinicalPatIDCol]]
-
-    # Make radiomic summarized experiment
-    selectPatRadiomicData <- filter(radiomicDataframe, radiomicDataframe[[radiomicPatIDCol]] %in% selectPatIDs)
-    radiomicSEO <- makeRadiomicSEO(selectPatRadiomicData, pyradiomicsConfig = pyradiomicsConfig)
-
-    # Construct sampleMap for MAE
-    radiomicColname <- colnames(radiomicSEO)
-    radiomicPrimary <- selectPatRadiomicData[[radiomicPatIDCol]]
-    radiomicAssay <- rep(factor("radiomics"), each = length(radiomicPrimary))
-    sampleMap <- data.frame(assay = radiomicAssay,
-                            primary = radiomicPrimary,
-                            colname = radiomicColname)
-
-    tempExpList <- list(radiomics = radiomicSEO)
-
-     # If negative control data is present, create a Summarized Experiment and include it in the MAE
-    if (!is.null(negativeControlDataFilePath)) {
-        negControlDataframe = loadRadiogenomicDataFile(negativeControlDataFilePath)
-
-        selectPatNegControlData <- filter(negControlDataframe, negControlDataframe[[radiomicPatIDCol]] %in% selectPatIDs)
-        negControlSEO <- makeRadiomicSEO(selectPatNegControlData, pyradiomicsConfig = pyradiomicsConfig)
-
-        negControlColname <- colnames(negControlSEO)
-        negControlPrimary <- selectPatIDs
-        negControlAssay <- rep(factor("negative_control_radiomics"), each = length(negControlPrimary))
-        negControlSampleMap <- data.frame(assay = negControlAssay,
-                                          primary = negControlPrimary,
-                                          colname = negControlColname)
-        sampleMap <- rbind(sampleMap, negControlSampleMap)
-
-        tempExpList <- c(tempExpList, negative_control_radiomics = negControlSEO)
-    }
     # Add genomics to experiment list and sample map if present
     if (noGene != FALSE) {
         # experimentList <- ExperimentList(list(radiomics = radiomicSEO,
@@ -220,6 +226,11 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
         sampleMap <- rbind(sampleMap, genomicSampleMap)
     }
 
+    # Prepare clinical data for MAE
+    selectPatClinicalData <- filter(clinicalDataframe, clinicalDataframe[[clinicalPatIDCol]] %in% selectPatIDs)
+    selectPatClinicalData <- as.data.frame(selectPatClinicalData)
+    rownames(selectPatClinicalData) <- selectPatClinicalData[[clinicalPatIDCol]]
+
     # Generate Experiment List object for MAE
     experimentList <- ExperimentList(tempExpList)
 
@@ -231,7 +242,7 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
                                             colData = selectPatClinicalData,
                                             sampleMap = sampleMap)
 
-    # Save out MAE
+    # # Save out MAE
     outputExt <- file_ext(outputFileName)
     if (outputExt == "rds") {
         saveRDS(radiogenomicMAE, outputFileName)
@@ -242,23 +253,30 @@ makeRadiogenomicMAE <- function(clinicalDataFilePath,
     return(radiogenomicMAE)
 }
 
-# -- Read in Snakemake parameters
-clinicalDataFilePath <- snakemake@input$clinical
-radiomicDataFilePath <- snakemake@input$radiomic
-negativeControlDataFilePath <- snakemake@input$negativecontrol
 
-pyradiomicsConfigFile <- snakemake@params$pyrad
-findFeature <- snakemake@params$findFeature
-clinicalPatIDCol <- snakemake@params$clinicalPatIDCol
-radiomicPatIDCol <- snakemake@params$radiomicPatIDCol
-outputFileName <- snakemake@params$outputFileName
+# Initialized command line argument parser
+parser <- arg_parser("make MAE")
+# Positional arguments
+parser <- add_argument(parser, "clinical_data_file_path", help="Path to clinical data file.")
+parser <- add_argument(parser, "radiomic_data_dir_path", help="Path to any radiomic features csv file. Any other files in this directory will be included in MAE")
+parser <- add_argument(parser, "output_file_name", help="File path to save resulting MultiAssayExperiment to.")
+parser <- add_argument(parser, "pyradiomics_config_file", help="Path to PyRadiomics config file (yaml) used for feature extraction.")
+# Optional arguments
+parser <- add_argument(parser, "--radiomic_find_feature", help="A radiomic feature that has been included in the extraction, used to find all the filter types. Cannot be a shape feature.", default="firstorder_10Percentile")
+parser <- add_argument(parser, "--clinical_patient_id", help="Name of the patient identifier column in clinical data.", default="Case ID")
+parser <- add_argument(parser, "--radiomic_patient_id", help="Name of the patient identifier column in radiomic data.", default="patient_ID")
+
+args <- parse_args(parser)
+
+
+# radiomicDataDirPath <- snakemake@input$radiomicDir
+radiomicDataDirPath <- dirname(args$radiomic_data_dir_path)
 
 # Call function
-makeRadiogenomicMAE(clinicalDataFilePath,
-                    radiomicDataFilePath,
-                    pyradiomicsConfigFile,
-                    negativeControlDataFilePath,
-                    findFeature,
-                    outputFileName = outputFileName,
-                    clinicalPatIDCol = clinicalPatIDCol,
-                    radiomicPatIDCol = radiomicPatIDCol)
+makeRadiogenomicMAE(clinicalDataFilePath = args$clinical_data_file_path,
+                    radiomicDataDirPath = radiomicDataDirPath,
+                    pyradiomicsConfigFile = args$pyradiomics_config_file,
+                    findFeature = args$radiomic_find_feature,
+                    outputFileName = args$output_file_name,
+                    clinicalPatIDCol = args$clinical_patient_id,
+                    radiomicPatIDCol = args$radiomic_patient_id)

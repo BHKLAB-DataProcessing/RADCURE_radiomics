@@ -1,0 +1,12 @@
+channels:
+  - defaults
+  - anaconda
+  - conda-forge
+  - bioconda
+dependencies:
+  - numpy=1.26.4
+  - python=3.9.18
+  - pip=24.0
+  - pip:
+      - readii==1.7.6
+      - func-timeout==4.3.5

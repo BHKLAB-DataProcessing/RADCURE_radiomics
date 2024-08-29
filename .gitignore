@@ -5,10 +5,12 @@ data*
 rawdata
 *pycache*
 clinical/
-logs/
+logs*/
 results/
 scripts/dicomsort.py
 trash/
 orcestradata
 old_results
 rawdata
+results_old*
+.deprecated/

@@ -12,12 +12,12 @@ NEG_CONTROLS:
   - shuffled_full
   - shuffled_roi
   - shuffled_non_roi
-  - randomized_full
-  - randomized_roi
-  - randomized_non_roi
   - randomized_sampled_full
   - randomized_sampled_roi
   - randomized_sampled_non_roi
+# - randomized_full
+# - randomized_roi
+# - randomized_non_roi
 
 # Configuration for PyRadiomics feature extraction
 PYRAD_SETTING: "scripts/pyrad_settings/uhn-radcure-challenge_plus_aerts_params.yaml"

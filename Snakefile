@@ -8,20 +8,10 @@ HTTP = HTTPRemoteProvider()
 #######################################################################
 # Need to configure default resources memory and disk space for each group to be used in the cluster
 
-# read in metadata/RADCURE_PatientIDs.csv 
-# PATIENT_IDS = pd.read_csv("metadata/RADCURE_RTSTRUCT_PatientIDs.csv")
-
-# # get 'Patient ID` column and convert to list
-# patients, desc, series, file = glob_wildcards("rawdata/radiomics/RADCURE/{patient_id}/{desc}/{series}/{file}.dcm")
-# PATIENT_IDS = list(set(patients))
+#TODO: move this to config file
 patientFile = "metadata/patients_rtstruct.txt"
-# patientFile = "metadata/broken_random_roi_patients.txt"
-
 with open(patientFile, 'r') as file:
     PATIENT_IDS = file.read().splitlines()
-
-# PATIENT_IDS = "PATIENT_IDS[:100]"
-# PATIENT_IDS = ["RADCURE-2454"]
 
 configfile: "config/snakeconfig.yaml"
 
@@ -29,7 +19,6 @@ RANDOM_SEED = config['RANDOM_SEED']
 READII_ROI_REGEX = config['READII_ROI_REGEX']
 NEG_CONTROLS = config['NEG_CONTROLS']
 PYRAD_SETTING = config['PYRAD_SETTING']
-
 
 envs = Path("envs")
 medimagetools_docker = "docker://bhklab/med-imagetools:1.2.0.2"
@@ -50,7 +39,6 @@ rule runMedImageTools:
         csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
         json_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.json",
         edge_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}_edges.csv"
-        # outputDir=temp(directory("data/med-imageout/{patient_id}"))
     group:
         "readii"
     conda:

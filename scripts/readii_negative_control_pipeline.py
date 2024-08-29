@@ -3,9 +3,12 @@ import os
 
 from readii.metadata import *
 from readii.feature_extraction import *
+from readii.utils import get_logger
 import radiomics
 from func_timeout import func_timeout, FunctionTimedOut
 import yaml
+
+logger = get_logger()
 
 
 def parser():
@@ -45,54 +48,59 @@ def main():
     """Function to run READII radiomic feature extraction pipeline.
     """
     args = parser()
+    pretty_args = '\n\t'.join([f"{k}: {v}" for k, v in vars(args).items()])
+    logger.debug(
+        f"Arguments:\n\t{pretty_args}"
+    )
+    
+    # radiomics.setVerbosity(10)
+    logger.info("Starting readii pipeline...")
 
      # Set up output directory
     outputDir = os.path.join(args.output_directory, "readii_outputs")
     if not os.path.exists(outputDir):
-        print("Creating output directory:", outputDir)
+        logger.info(f"Directory {outputDir} does not exist. Creating...")
         os.makedirs(outputDir)
+    else:
+        logger.warning(f"Directory {outputDir} already exists. Will overwrite contents.")
 
     # Find med-imagetools output files
-    print("Finding med-imagetools outputs...")
+    logger.info("Finding med-imagetools outputs...")
     parentDirPath, datasetName = os.path.split(args.data_directory)
     imageFileListPath = os.path.join(parentDirPath + "/.imgtools/imgtools_" + datasetName + ".csv")
     if not os.path.exists(imageFileListPath):
         # Can we run med-imagetools in here?
+        logger.error(
+            f"Expected file {imageFileListPath} not found. Check the data_directory argument or run med-imagetools."
+        )
         raise FileNotFoundError("Output for med-imagetools not found for this image set. Check the data_directory argument or run med-imagetools.")
 
-    print("Getting segmentation type...")
+    logger.info(f"Getting segmentation type...")
     try:
         # Get segType from imageFileList to generate the image metadata file and set up feature extraction
         segType = getSegmentationType(imageFileListPath)
     except RuntimeError as e:
-        print(str(e))
-        print("Feature extraction not complete.")
+        logger.error(str(e))
+        logger.error("Feature extraction not complete.")
         exit()
 
+
     # Check if image metadata file has already been created
-    imageMetadataPath = os.path.join(outputDir, "ct_to_seg_match_list_" + datasetName + ".csv")
-    if not os.path.exists(imageMetadataPath):
-        print("Matching CT to segmentations...")
-        # Generate image metadata file by getting edges of type 2 in edge graph from med-imagetools
-        imageFileEdgesPath = os.path.join(parentDirPath + "/.imgtools/imgtools_" + datasetName + "_edges.csv")
-        getCTWithSegmentation(imgFileEdgesPath = imageFileEdgesPath,
-                                segType = segType,
-                                outputFilePath = imageMetadataPath)
-    else: 
-        print("Image metadata file has already been created.")
+    imageMetadataPath = createImageMetadataFile(outputDir,
+                                                parentDirPath,
+                                                datasetName,
+                                                segType,
+                                                imageFileListPath)
 
-    # print("Starting radiomic feature extraction...")
-    # ncRadFeatOutPath = os.path.join(outputDir, "features/", "radiomicfeatures_" + args.negative_control + "_" + datasetName + ".csv")
-
-    print("Starting radiomic feature extraction for negative control: ", args.negative_control)
-
+    # Throwing TypeError: not all arguments converted during string formatting
+    logger.info(f"Starting radiomic feature extraction for negative control: {args.negative_control}")
     try:
         # Timeout is 20 hours = 72,000 seconds
         ncRadiomicFeatures = func_timeout(timeout = 72000, func = radiomicFeatureExtraction, 
                                           args = (imageMetadataPath, parentDirPath, args.roi_names, args.pyradiomics_setting, 
                                                   outputDir, args.negative_control, args.random_seed, args.parallel))
     except FunctionTimedOut:
-        print("Passed radiomic features took too long to run. Removing Wavelet filter and running again.")
+        logger.info(f"Passed radiomic features took too long to run. Removing Wavelet filter and running again.")
         
         # Log that this sample timed out for wavelet
         waveletLogFilePath = os.path.join(os.path.dirname(outputDir), "wavelet_logs/no_wavelet_features_list.log")
@@ -122,7 +130,10 @@ def main():
                                                        randomSeed=args.random_seed,
                                                        parallel = args.parallel)
     except Exception as e:
-        print(e)
+        logger.error(e)
+        logger.error("Feature extraction not complete.")
+
+    logger.info("Pipeline complete.")
 
 if __name__ == "__main__":
     main()

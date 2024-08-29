@@ -3,6 +3,9 @@ import os
 
 from readii.metadata import *
 from readii.feature_extraction import *
+from readii.utils import get_logger
+
+logger = get_logger()
 
 def parser():
     """Function to take command-line arguments and set them up for the pipeline run
@@ -34,42 +37,50 @@ def main():
     """Function to run READII radiomic feature extraction pipeline.
     """
     args = parser()
+    pretty_args = '\n\t'.join([f"{k}: {v}" for k, v in vars(args).items()])
+    logger.debug(
+        f"Arguments:\n\t{pretty_args}"
+    )
+
+    logger.info("Starting readii pipeline...")
 
      # Set up output directory
     outputDir = os.path.join(args.output_directory, "readii_outputs")
     if not os.path.exists(outputDir):
-        print("Creating output directory:", outputDir)
+        logger.info(f"Directory {outputDir} does not exist. Creating...")
         os.makedirs(outputDir)
+    else:
+        logger.warning(f"Directory {outputDir} already exists. Will overwrite contents.")
 
     # Find med-imagetools output files
-    print("Finding med-imagetools outputs...")
+    logger.info("Finding med-imagetools outputs...")
     parentDirPath, datasetName = os.path.split(args.data_directory)
     imageFileListPath = os.path.join(parentDirPath + "/.imgtools/imgtools_" + datasetName + ".csv")
     if not os.path.exists(imageFileListPath):
         # Can we run med-imagetools in here?
+        logger.error(
+            f"Expected file {imageFileListPath} not found. Check the data_directory argument or run med-imagetools."
+        )
         raise FileNotFoundError("Output for med-imagetools not found for this image set. Check the data_directory argument or run med-imagetools.")
 
-    print("Getting segmentation type...")
+    logger.info(f"Getting segmentation type...")
     try:
         # Get segType from imageFileList to generate the image metadata file and set up feature extraction
         segType = getSegmentationType(imageFileListPath)
     except RuntimeError as e:
-        print(str(e))
-        print("Feature extraction not complete.")
+        logger.error(str(e))
+        logger.error("Feature extraction not complete.")
         exit()
 
     # Check if image metadata file has already been created
-    imageMetadataPath = os.path.join(outputDir, "ct_to_seg_match_list_" + datasetName + ".csv")
-    print("Matching CT to segmentations...")
-    # Generate image metadata file by getting edges of type 2 in edge graph from med-imagetools
-    imageFileEdgesPath = os.path.join(parentDirPath + "/.imgtools/imgtools_" + datasetName + "_edges.csv")
-    getCTWithSegmentation(imgFileEdgesPath = imageFileEdgesPath,
-                            segType = segType,
-                            outputFilePath = imageMetadataPath)
+    imageMetadataPath = createImageMetadataFile(outputDir,
+                                                parentDirPath,
+                                                datasetName,
+                                                segType,
+                                                imageFileListPath)
 
 
-
-    print("Starting radiomic feature extraction...")
+    logger.info(f"Starting radiomic feature extraction...")
     radiomicFeatures = radiomicFeatureExtraction(imageMetadataPath = imageMetadataPath,
                                                  imageDirPath = parentDirPath,
                                                  roiNames = args.roi_names,
@@ -77,6 +88,7 @@ def main():
                                                  outputDirPath = outputDir,
                                                  parallel = args.parallel)
 
+    logger.info(f"Pipeline complete.")
 
 if __name__ == "__main__":
     main()

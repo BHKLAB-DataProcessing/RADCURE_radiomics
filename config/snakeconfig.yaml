@@ -25,11 +25,10 @@ PYRAD_SETTING: "scripts/pyrad_settings/uhn-radcure-challenge_plus_aerts_params.y
 
 # MAE generation settings
 # Link to download clinical data
-CLINICAL_FILE_LINK: https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2
+CLINICAL_FILE_LINK: https://www.cancerimagingarchive.net/wp-content/uploads/RADCURE-DA-CLINICAL-2.xlsx
 
 # Name of the patient ID column in the clinical file
 CLINICAL_PATIENT_ID_COL: patient_id
 
 # Feature to use to find beginning of radiomic features in the READII outputs. Cannot be a shape feature. If using default settings, can use firstorder_10Percentile
 FIND_FEATURE: firstorder_10Percentile
-  

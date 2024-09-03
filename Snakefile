@@ -20,6 +20,9 @@ READII_ROI_REGEX = config['READII_ROI_REGEX']
 NEG_CONTROLS = config['NEG_CONTROLS']
 PYRAD_SETTING = config['PYRAD_SETTING']
 
+CLINICAL_FILE_LINK = config['CLINICAL_FILE_LINK']
+CLINICAL_FILE_SAVE_NAME = "clinical_" + config['DATASET_NAME'] + ".xlsx"
+
 envs = Path("envs")
 medimagetools_docker = "docker://bhklab/med-imagetools:1.2.0.2"
 readii_docker = "docker://bhklab/readii:1.4.2"
@@ -200,9 +203,9 @@ rule makeMAE:
 
 rule getClinicalData:
     input:
-        file = HTTP.remote("https://wiki.cancerimagingarchive.net/download/attachments/70226325/RADCURE_TCIA_Clinical%20June%2013%202023.xlsx?api=v2")
+        file = HTTP.remote(CLINICAL_FILE_LINK)
     output:
-        clinical_file = "rawdata/clinical/clinical_RADCURE.xlsx"
+        clinical_file = "rawdata/clinical/"+CLINICAL_FILE_SAVE_NAME
     shell:
         """
         mv {input.file} {output.clinical_file}

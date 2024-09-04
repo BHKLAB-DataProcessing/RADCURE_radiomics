@@ -206,7 +206,7 @@ rule getClinicalData:
     input:
         file = HTTP.remote(CLINICAL_FILE_LINK)
     output:
-        clinical_file = "rawdata/clinical/"+CLINICAL_FILE_SAVE_NAME
+        clinical_file = "rawdata/clinical/" + CLINICAL_FILE_SAVE_NAME
     shell:
         """
         mv {input.file} {output.clinical_file}

@@ -15,6 +15,7 @@ with open(patientFile, 'r') as file:
 
 configfile: "config/snakeconfig.yaml"
 
+DATASET_NAME = config['DATASET_NAME']
 RANDOM_SEED = config['RANDOM_SEED']
 READII_ROI_REGEX = config['READII_ROI_REGEX']
 NEG_CONTROLS = config['NEG_CONTROLS']
@@ -32,16 +33,16 @@ rule all:
         # radFeatures = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS),
         # ncRadFeatures =  expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv", 
         #                         patient_id=PATIENT_IDS, negative_control=NEG_CONTROLS)
-        maeObject = "results/RADCURE_readii_radiomic_MAE.rds"
+        maeObject = "results/" + DATASET_NAME + "_readii_radiomic_MAE.rds"
         
 
 rule runMedImageTools:
     input: 
-        inputDir="rawdata/radiomics/RADCURE/{patient_id}"
+        inputDir="rawdata/radiomics/" + DATASET_NAME + "/{patient_id}"
     output: 
-        csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
-        json_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.json",
-        edge_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}_edges.csv"
+        csv_file="rawdata/radiomics/" + DATASET_NAME + "/.imgtools/imgtools_{patient_id}.csv",
+        json_file="rawdata/radiomics/" + DATASET_NAME + "/.imgtools/imgtools_{patient_id}.json",
+        edge_file="rawdata/radiomics/" + DATASET_NAME + "/.imgtools/imgtools_{patient_id}_edges.csv"
     group:
         "readii"
     conda:
@@ -61,9 +62,9 @@ rule runMedImageTools:
 
 rule runREADII:
     input:
-        inputDir="rawdata/radiomics/RADCURE/{patient_id}",
-        med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
-        med_image_csv_edge_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}_edges.csv",
+        inputDir="rawdata/radiomics/" + DATASET_NAME + "/{patient_id}",
+        med_image_csv_file="rawdata/radiomics/" + DATASET_NAME + "/.imgtools/imgtools_{patient_id}.csv",
+        med_image_csv_edge_file="rawdata/radiomics/" + DATASET_NAME + "/.imgtools/imgtools_{patient_id}_edges.csv",
         PYRAD_SETTING = local(PYRAD_SETTING)
     output:
         radFeatures="results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv"
@@ -99,9 +100,9 @@ rule runREADII:
 rule runREADIINegativeControl:
     input:
         rules.runREADII.output.radFeatures, # force the negative control to wait for the radiomic features to be generated
-        inputDir="rawdata/radiomics/RADCURE/{patient_id}",
-        med_image_csv_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}.csv",
-        med_image_csv_edges_file="rawdata/radiomics/RADCURE/.imgtools/imgtools_{patient_id}_edges.csv",
+        inputDir="rawdata/radiomics/" + DATASET_NAME + "/{patient_id}",
+        med_image_csv_file="rawdata/radiomics/" + DATASET_NAME + "/.imgtools/imgtools_{patient_id}.csv",
+        med_image_csv_edges_file="rawdata/radiomics/" + DATASET_NAME + "/.imgtools/imgtools_{patient_id}_edges.csv",
         PYRAD_SETTING = local(PYRAD_SETTING),
     output:
         radFeatures_negcontrols = "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv"
@@ -142,8 +143,8 @@ rule combineRadiomicFeatures:
     input:
         all_pat_radiomic_features = expand("results/{patient_id}/readii_outputs/features/radiomicfeatures_{patient_id}.csv", patient_id=PATIENT_IDS)
     output:
-        combined_radiomic_features ="results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
-        radiomicDir = directory("results/snakemake_RADCURE/features")
+        combined_radiomic_features ="results/snakemake_" + DATASET_NAME + "/features/radiomicfeatures_" + DATASET_NAME + ".csv",
+        radiomicDir = directory("results/snakemake_" + DATASET_NAME + "/features")
     run:
     # combine all csvs from each input into respective output files, only include the header once 
         with open(output.combined_radiomic_features, "w") as radiomic_features:
@@ -164,7 +165,7 @@ rule combineNegativeControlFeatures:
             patient_id=PATIENT_IDS, negative_control="{negative_control}")
         # radFeatures_negcontrols = "results/{patient_id}/readii_outputs/features/radiomicfeatures_{negative_control}_{patient_id}.csv"
     output:
-        combined_negative_control_features = "results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv",
+        combined_negative_control_features = "results/snakemake_" + DATASET_NAME + "/features/radiomicfeatures_{negative_control}_" + DATASET_NAME + ".csv",
     run:
     # combine all csvs from each input into respective output files, only include the header once 
         with open(output.combined_negative_control_features, "w") as nc_radiomic_features:
@@ -179,13 +180,13 @@ rule combineNegativeControlFeatures:
 
 rule makeMAE:
     input:
-        combined_negative_control_features = expand("results/snakemake_RADCURE/features/radiomicfeatures_{negative_control}_RADCURE.csv", negative_control=NEG_CONTROLS),
-        combined_radiomic_features ="results/snakemake_RADCURE/features/radiomicfeatures_RADCURE.csv",
-        clinical="rawdata/clinical/clinical_RADCURE.xlsx",
+        combined_negative_control_features = expand("results/snakemake_" + DATASET_NAME + "/features/radiomicfeatures_{negative_control}_" + DATASET_NAME + ".csv", negative_control=NEG_CONTROLS),
+        combined_radiomic_features ="results/snakemake_" + DATASET_NAME + "/features/radiomicfeatures_" + DATASET_NAME + ".csv",
+        clinical="rawdata/clinical/clinical_" + DATASET_NAME + ".xlsx",
         PYRAD_SETTING = local(PYRAD_SETTING),
-        # radiomicDir="results/snakemake_RADCURE/features",
+        # radiomicDir="results/snakemake_" + DATASET_NAME + "/features",
     output:
-        outputFileName="results/RADCURE_readii_radiomic_MAE.rds"
+        outputFileName="results/" + DATASET_NAME + "_readii_radiomic_MAE.rds"
     params:
         findFeature="firstorder_10Percentile",
         clinicalPatIDCol="patient_id",
